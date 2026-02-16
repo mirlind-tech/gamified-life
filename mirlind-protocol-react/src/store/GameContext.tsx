@@ -1,0 +1,314 @@
+import { useReducer, useCallback, useEffect, useState, type ReactNode } from 'react';
+import type { PlayerStats, ViewType, Toast, ActivityStats } from '../types';
+import * as authApi from '../services/authApi';
+import { logger } from '../utils/logger';
+import { removeToken } from '../services/authApi';
+import * as playerApi from '../services/playerApi';
+import { transformUserToPlayer, transformBackendStatsToPlayer } from './gameHelpers';
+import { GameContext, type GameAction } from './gameTypes';
+
+// ============================================================================
+// Initial State
+// ============================================================================
+
+const initialActivityStats: ActivityStats = {
+  focusSessions: 0,
+  focusMinutes: 0,
+  journalEntries: 0,
+  habitsCompleted: 0,
+  meditationMinutes: 0,
+  dailyQuestStreak: 0,
+  lastQuestDate: null,
+  aiCoachChats: 0,
+  questsCompleted: 0,
+};
+
+// Re-export for use in createInitialPlayerState
+
+const createInitialPlayerState = (): PlayerStats => ({
+  name: 'Unnamed Warrior',
+  title: 'Novice Seeker',
+  level: 1,
+  xp: 0,
+  xpToNext: 1000,
+  pillars: {
+    craft: { id: 'craft', name: 'Craft', subtitle: 'Technical Mastery', icon: 'zap', color: '#06b6d4', description: 'The foundation of your value', level: 1, xp: 0, xpToNext: 100 },
+    vessel: { id: 'vessel', name: 'Vessel', subtitle: 'Physical Excellence', icon: 'muscle', color: '#ec4899', description: 'Your body is the vehicle', level: 1, xp: 0, xpToNext: 100 },
+    tongue: { id: 'tongue', name: 'Tongue', subtitle: 'Language & Influence', icon: 'speech', color: '#8b5cf6', description: 'Words are weapons', level: 1, xp: 0, xpToNext: 100 },
+    principle: { id: 'principle', name: 'Principle', subtitle: 'Mental Fortitude', icon: 'brain', color: '#a855f7', description: 'Detach from emotion', level: 1, xp: 0, xpToNext: 150 },
+    capital: { id: 'capital', name: 'Capital', subtitle: 'Financial Mastery', icon: 'money', color: '#10b981', description: 'Money is a tool', level: 1, xp: 0, xpToNext: 100 },
+  },
+  skills: {},
+  professionalSkills: {},
+  coreStats: {
+    strength: 10,
+    agility: 10,
+    intelligence: 10,
+    wisdom: 10,
+    charisma: 10,
+    constitution: 10,
+    discipline: 10,
+    creativity: 10,
+  },
+  willpower: 100,
+  maxWillpower: 100,
+  unlockedGates: [],
+  gates: [],
+  activityStats: initialActivityStats,
+  xpHistory: [],
+  levelUpHistory: [],
+  totalXPEarned: 0,
+  questsCompleted: 0,
+  startDate: new Date().toISOString(),
+});
+
+// ============================================================================
+// Actions & Reducer
+// ============================================================================
+
+interface GameState {
+  player: PlayerStats;
+  currentView: ViewType;
+  toasts: Toast[];
+  isLoading: boolean;
+  isAuthenticated: boolean;
+  username: string | null;
+}
+
+
+
+function gameReducer(state: GameState, action: GameAction): GameState {
+  switch (action.type) {
+    case 'UPDATE_PLAYER':
+      return { ...state, player: { ...state.player, ...action.payload } };
+    case 'SET_PLAYER':
+      return { ...state, player: action.payload };
+    case 'SET_VIEW':
+      return { ...state, currentView: action.payload };
+    case 'ADD_TOAST':
+      return { ...state, toasts: [...state.toasts, action.payload] };
+    case 'REMOVE_TOAST':
+      return { ...state, toasts: state.toasts.filter(t => t.id !== action.payload) };
+    case 'SET_LOADING':
+      return { ...state, isLoading: action.payload };
+    case 'SET_AUTH':
+      return { ...state, isAuthenticated: action.payload.isAuthenticated, username: action.payload.username };
+    case 'TRACK_ACTIVITY':
+      return {
+        ...state,
+        player: {
+          ...state.player,
+          activityStats: {
+            ...state.player.activityStats,
+            [action.payload.type]: ((state.player.activityStats[action.payload.type] as number) || 0) + action.payload.value,
+          },
+        },
+      };
+    case 'ADD_XP':
+      return {
+        ...state,
+        player: {
+          ...state.player,
+          totalXPEarned: state.player.totalXPEarned + action.payload.amount,
+        },
+      };
+    default:
+      return state;
+  }
+}
+
+
+
+// ============================================================================
+// Provider
+// ============================================================================
+
+export function GameProvider({ children }: { children: ReactNode }) {
+  const [state, dispatch] = useReducer(gameReducer, {
+    player: createInitialPlayerState(),
+    currentView: 'tree',
+    toasts: [],
+    isLoading: true,
+    isAuthenticated: false,
+    username: null,
+  });
+
+  const [useLocalStorage, setUseLocalStorage] = useState(true);
+
+  // Toast helper
+  const showToast = useCallback((message: string, type: Toast['type'] = 'default', duration = 3000) => {
+    const id = Math.random().toString(36).substring(7);
+    dispatch({ type: 'ADD_TOAST', payload: { id, message, type, duration } });
+    setTimeout(() => {
+      dispatch({ type: 'REMOVE_TOAST', payload: id });
+    }, duration);
+  }, []);
+
+  // View helper
+  const setView = useCallback((view: ViewType) => {
+    dispatch({ type: 'SET_VIEW', payload: view });
+  }, []);
+
+  // Track activity - syncs with API if authenticated, otherwise local only
+  const trackActivity = useCallback(async (type: keyof ActivityStats, value: number) => {
+    dispatch({ type: 'TRACK_ACTIVITY', payload: { type, value } });
+    
+    if (state.isAuthenticated && !useLocalStorage) {
+      try {
+        await playerApi.trackActivity(type as string, value);
+      } catch (error) {
+        logger.error('Failed to track activity:', error);
+      }
+    }
+  }, [state.isAuthenticated, useLocalStorage]);
+
+  // Add XP - calls backend and handles level up
+  const addXP = useCallback(async (amount: number, pillarType: string) => {
+    dispatch({ type: 'ADD_XP', payload: { amount, skill: pillarType } });
+    
+    if (state.isAuthenticated && !useLocalStorage) {
+      try {
+        const result = await playerApi.addXP(amount, pillarType);
+        
+        // Show level up notification
+        if (result.levelUp) {
+          showToast(
+            `🎉 LEVEL UP! You are now Level ${result.newLevel}!`,
+            'success',
+            5000
+          );
+        }
+        
+        // Refresh player stats from backend
+        const statsResult = await playerApi.getPlayerStats();
+        const playerData = transformBackendStatsToPlayer(statsResult.stats);
+        dispatch({ type: 'SET_PLAYER', payload: playerData });
+      } catch (error) {
+        logger.error('Failed to add XP:', error);
+      }
+    }
+  }, [state.isAuthenticated, useLocalStorage, showToast]);
+
+  // Auth: Login
+  const login = useCallback(async (email: string, password: string) => {
+    try {
+      const response = await authApi.login({ email, password });
+      authApi.setToken(response.token);
+      dispatch({ type: 'SET_AUTH', payload: { isAuthenticated: true, username: response.user.username } });
+      // User data will be loaded from localStorage via transformUserToPlayer
+      const playerData = transformUserToPlayer(response.user);
+      dispatch({ type: 'SET_PLAYER', payload: playerData });
+      setUseLocalStorage(false);
+      showToast(`Welcome back, ${response.user.username}!`, 'success');
+    } catch (err) {
+      showToast((err as Error).message || 'Login failed', 'error');
+      throw err;
+    }
+  }, [showToast]);
+
+  // Auth: Register
+  const register = useCallback(async (email: string, password: string, username: string) => {
+    try {
+      const response = await authApi.register({ email, username, password });
+      authApi.setToken(response.token);
+      dispatch({ type: 'SET_AUTH', payload: { isAuthenticated: true, username } });
+      const playerData = transformUserToPlayer(response.user);
+      dispatch({ type: 'SET_PLAYER', payload: playerData });
+      setUseLocalStorage(false);
+      showToast(`Welcome, ${username}! Your journey begins now.`, 'success');
+    } catch (err: unknown) {
+      showToast((err as Error).message || 'Registration failed', 'error');
+      throw err;
+    }
+  }, [showToast]);
+
+  // Auth: Logout
+  const logout = useCallback(() => {
+    removeToken();
+    dispatch({ type: 'SET_AUTH', payload: { isAuthenticated: false, username: null } });
+    dispatch({ type: 'SET_PLAYER', payload: createInitialPlayerState() });
+    setUseLocalStorage(true);
+    showToast('Logged out successfully', 'default');
+  }, [showToast]);
+
+  // Load data on mount
+  useEffect(() => {
+    const loadFromLocalStorage = () => {
+      const saved = localStorage.getItem('mirlind-protocol-save');
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          dispatch({ type: 'SET_PLAYER', payload: { ...createInitialPlayerState(), ...parsed } });
+        } catch (e) {
+          logger.error('Failed to parse saved data:', e);
+        }
+      }
+    };
+
+    const loadData = async () => {
+      try {
+        // Check if we have a token
+        if (authApi.getToken()) {
+          try {
+            const { user } = await authApi.getCurrentUser();
+            dispatch({ type: 'SET_AUTH', payload: { isAuthenticated: true, username: user.username } });
+            
+            // Load player stats from backend
+            try {
+              const statsResult = await playerApi.getPlayerStats();
+              const playerData = transformBackendStatsToPlayer(statsResult.stats);
+              dispatch({ type: 'SET_PLAYER', payload: playerData });
+            } catch (statsError) {
+              logger.error('Failed to load player stats:', statsError);
+              // Fall back to user data
+              dispatch({ type: 'SET_PLAYER', payload: transformUserToPlayer(user) });
+            }
+            
+            setUseLocalStorage(false);
+          } catch {
+            // Token invalid, fall back to localStorage
+            removeToken();
+            loadFromLocalStorage();
+          }
+        } else {
+          loadFromLocalStorage();
+        }
+      } catch (e) {
+        logger.error('Failed to load data:', e);
+      } finally {
+        dispatch({ type: 'SET_LOADING', payload: false });
+      }
+    };
+
+    loadData();
+  }, []);
+
+  // Auto-save to localStorage when in offline mode
+  useEffect(() => {
+    if (!state.isLoading && useLocalStorage) {
+      localStorage.setItem('mirlind-protocol-save', JSON.stringify(state.player));
+    }
+  }, [state.player, state.isLoading, useLocalStorage]);
+
+  return (
+    <GameContext.Provider value={{ 
+      state, 
+      dispatch, 
+      setView, 
+      showToast, 
+      trackActivity, 
+      login, 
+      register, 
+      logout,
+      addXP,
+    }}>
+      {children}
+    </GameContext.Provider>
+  );
+}
+
+// ============================================================================
+// Helper: Transform API User to PlayerStats
+// Note: transformUserToPlayer and transformBackendStatsToPlayer are imported from gameHelpers.ts
+// useGame hook is imported from './useGame' directly
+// ============================================================================

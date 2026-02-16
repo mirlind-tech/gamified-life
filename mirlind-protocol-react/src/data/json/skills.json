@@ -1,0 +1,503 @@
+{
+  "PHYSICAL_SKILLS": [
+    {
+      "id": "backflip",
+      "name": "Backflip",
+      "category": "physical",
+      "description": "The ultimate test of body control and courage. Master the backward rotation in the air.",
+      "icon": "🤸",
+      "difficulty": 4,
+      "estimatedHours": 40,
+      "whyLearn": "Overcome fear, master body control, impress everyone",
+      "currentStage": 0,
+      "completed": false,
+      "stages": [
+        {
+          "name": "Foundation",
+          "description": "Build strength and flexibility needed",
+          "hoursNeeded": 10,
+          "microGoals": ["100 squats daily", "Bridge hold 60s", "Cartwheel both sides", "Back roll on ground"],
+          "resources": [
+            { "title": "Backflip Prerequisites Guide", "type": "article" },
+            { "title": "Mobility for Acrobatics", "type": "video" }
+          ]
+        },
+        {
+          "name": "Progression",
+          "description": "Learn the movement pattern safely",
+          "hoursNeeded": 15,
+          "microGoals": ["Back handspring", "Backflip on trampoline", "Backflip into pit", "Spotting technique"],
+          "resources": [
+            { "title": "Trampoline Progression", "type": "video" },
+            { "title": "Fear Management", "type": "article" }
+          ]
+        },
+        {
+          "name": "Execution",
+          "description": "Land it on solid ground",
+          "hoursNeeded": 15,
+          "microGoals": ["Backflip with spotter", "Solo backflip", "3 in a row", "Add height/style"],
+          "resources": [
+            { "title": "Landing Technique", "type": "video" },
+            { "title": "Common Mistakes", "type": "article" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "handstand",
+      "name": "Handstand",
+      "category": "physical",
+      "description": "The foundation of all acrobatics. Hold your body vertically on your hands.",
+      "icon": "🙃",
+      "difficulty": 3,
+      "estimatedHours": 30,
+      "whyLearn": "Build shoulder strength, improve balance, body awareness",
+      "currentStage": 0,
+      "completed": false,
+      "stages": [
+        {
+          "name": "Wrist Conditioning",
+          "description": "Prepare your wrists and shoulders",
+          "hoursNeeded": 5,
+          "microGoals": ["Wrist stretches 5min daily", "Wall planks", "Wrist pushups", "Crow pose 10s"],
+          "resources": [
+            { "title": "Wrist Conditioning Routine", "type": "video" }
+          ]
+        },
+        {
+          "name": "Wall Balance",
+          "description": "Find balance against the wall",
+          "hoursNeeded": 15,
+          "microGoals": ["Wall handstand 30s", "Nose-to-wall holds", "Shoulder taps", "One-leg wall balance"],
+          "resources": [
+            { "title": "Wall Handstand Drills", "type": "video" },
+            { "title": "Shoulder Flexibility", "type": "article" }
+          ]
+        },
+        {
+          "name": "Freestanding",
+          "description": "Balance without support",
+          "hoursNeeded": 10,
+          "microGoals": ["5 second freestanding", "15 second hold", "30 second hold", "Walk on hands"],
+          "resources": [
+            { "title": "Freestanding Balance", "type": "video" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "muscle_up",
+      "name": "Muscle Up",
+      "category": "physical",
+      "description": "Pull your entire body over a bar. The king of upper body strength.",
+      "icon": "💪",
+      "difficulty": 3,
+      "estimatedHours": 25,
+      "whyLearn": "Upper body mastery, functional strength, impressive feat",
+      "currentStage": 0,
+      "completed": false,
+      "stages": [
+        {
+          "name": "Pull Power",
+          "description": "Build pulling strength foundation",
+          "hoursNeeded": 10,
+          "microGoals": ["15 pull-ups", "5 chest-to-bar", "Explosive pulls", "High pulls"],
+          "resources": [
+            { "title": "Pull-Up Progression", "type": "article" }
+          ]
+        },
+        {
+          "name": "Transition",
+          "description": "Master the transition over the bar",
+          "hoursNeeded": 10,
+          "microGoals": ["Chest-to-bar hold", "Negative muscle-up", "Band-assisted", "Jump muscle-up"],
+          "resources": [
+            { "title": "Transition Technique", "type": "video" }
+          ]
+        },
+        {
+          "name": "Full Muscle-Up",
+          "description": "Complete the movement",
+          "hoursNeeded": 5,
+          "microGoals": ["1 muscle-up", "3 muscle-ups", "5 muscle-ups", "Weighted muscle-up"],
+          "resources": [
+            { "title": "Common Mistakes", "type": "article" }
+          ]
+        }
+      ]
+    }
+  ],
+  "CREATIVE_SKILLS": [
+    {
+      "id": "guitar_song",
+      "name": "Play a Song on Guitar",
+      "category": "creative",
+      "description": "Master one complete song from start to finish. Your first musical victory.",
+      "icon": "🎸",
+      "difficulty": 2,
+      "estimatedHours": 20,
+      "whyLearn": "Musical expression, impress friends, gateway to more songs",
+      "currentStage": 0,
+      "completed": false,
+      "stages": [
+        {
+          "name": "Basics",
+          "description": "Learn fundamentals",
+          "hoursNeeded": 5,
+          "microGoals": ["Learn 4 basic chords (G, C, D, Em)", "Clean chord transitions", "Basic strumming", "Tune by ear"],
+          "resources": [
+            { "title": "First Chords Tutorial", "type": "video" },
+            { "title": "Chord Transition Drills", "type": "video" }
+          ]
+        },
+        {
+          "name": "Song Structure",
+          "description": "Learn your chosen song",
+          "hoursNeeded": 10,
+          "microGoals": ["Verse chords perfect", "Chorus chords perfect", "Bridge learned", "Play with original track"],
+          "resources": [
+            { "title": "Easy Songs for Beginners", "type": "article" }
+          ]
+        },
+        {
+          "name": "Performance",
+          "description": "Play it fluently",
+          "hoursNeeded": 5,
+          "microGoals": ["No stopping through song", "Add dynamics", "Sing along", "Record yourself"],
+          "resources": [
+            { "title": "Performance Tips", "type": "article" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "beatbox",
+      "name": "Beatbox",
+      "category": "creative",
+      "description": "Create drum sounds with your mouth. Portable rhythm anywhere.",
+      "icon": "🎤",
+      "difficulty": 3,
+      "estimatedHours": 15,
+      "whyLearn": "Musical skill anywhere, impress people, rhythm training",
+      "currentStage": 0,
+      "completed": false,
+      "stages": [
+        {
+          "name": "Basic Sounds",
+          "description": "Learn the three core sounds",
+          "hoursNeeded": 5,
+          "microGoals": ["Kick drum (B)", "Hi-hat (T)", "Snare (Pf/K)", "Practice timing"],
+          "resources": [
+            { "title": "Basic Beatbox Sounds", "type": "video" }
+          ]
+        },
+        {
+          "name": "Simple Beat",
+          "description": "Put sounds together",
+          "hoursNeeded": 5,
+          "microGoals": ["Boots and cats", "Basic pattern 60bpm", "Speed up to 100bpm", "Add variation"],
+          "resources": [
+            { "title": "First Beat Pattern", "type": "video" }
+          ]
+        },
+        {
+          "name": "Freestyle",
+          "description": "Create your own patterns",
+          "hoursNeeded": 5,
+          "microGoals": ["30 second routine", "Add fills", "Double time", "Freestyle 1 minute"],
+          "resources": [
+            { "title": "Freestyle Tips", "type": "article" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "juggling",
+      "name": "Juggling 3 Balls",
+      "category": "creative",
+      "description": "A meditative skill that trains focus and hand-eye coordination.",
+      "icon": "🤹",
+      "difficulty": 2,
+      "estimatedHours": 10,
+      "whyLearn": "Focus training, meditative state, conversation starter",
+      "currentStage": 0,
+      "completed": false,
+      "stages": [
+        {
+          "name": "One Ball",
+          "description": "Master the cascade throw",
+          "hoursNeeded": 2,
+          "microGoals": ["Perfect arc throw", "Eye level height", "Consistent catches", "Both hands"],
+          "resources": [
+            { "title": "The Cascade Pattern", "type": "video" }
+          ]
+        },
+        {
+          "name": "Two Balls",
+          "description": "Exchange pattern",
+          "hoursNeeded": 3,
+          "microGoals": ["Exchange throw", "Smooth transfer", "10 exchanges", "Both starting hands"],
+          "resources": [
+            { "title": "Two Ball Exchange", "type": "video" }
+          ]
+        },
+        {
+          "name": "Three Balls",
+          "description": "The full cascade",
+          "hoursNeeded": 5,
+          "microGoals": ["First flash (3 throws)", "10 throws", "30 seconds continuous", "1 minute continuous"],
+          "resources": [
+            { "title": "Three Ball Cascade", "type": "video" },
+            { "title": "Common Mistakes", "type": "article" }
+          ]
+        }
+      ]
+    }
+  ],
+  "SOCIAL_SKILLS": [
+    {
+      "id": "salsa_basic",
+      "name": "Salsa Dancing (Basic)",
+      "category": "social",
+      "description": "Lead or follow in the passionate Latin dance. Move with confidence.",
+      "icon": "💃",
+      "difficulty": 2,
+      "estimatedHours": 15,
+      "whyLearn": "Social confidence, meet people, cultural appreciation",
+      "currentStage": 0,
+      "completed": false,
+      "stages": [
+        {
+          "name": "Basic Step",
+          "description": "Learn the foundation footwork",
+          "hoursNeeded": 5,
+          "microGoals": ["Basic step solo", "Timing with music", "Forward and back", "Side basic"],
+          "resources": [
+            { "title": "Salsa Basic Step", "type": "video" },
+            { "title": "Salsa Timing", "type": "video" }
+          ]
+        },
+        {
+          "name": "Partner Work",
+          "description": "Dance with a partner",
+          "hoursNeeded": 7,
+          "microGoals": ["Frame and connection", "Right turn", "Left turn", "Cross body lead"],
+          "resources": [
+            { "title": "Partner Connection", "type": "video" }
+          ]
+        },
+        {
+          "name": "Social Dancing",
+          "description": "Dance confidently socially",
+          "hoursNeeded": 3,
+          "microGoals": ["Dance full song", "Lead/follow clearly", "Style and flavor", "Dance with stranger"],
+          "resources": [
+            { "title": "Social Dance Etiquette", "type": "article" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "magic_trick",
+      "name": "Magic Card Trick",
+      "category": "social",
+      "description": "Master one mind-blowing card trick. Leave people speechless.",
+      "icon": "🎩",
+      "difficulty": 2,
+      "estimatedHours": 10,
+      "whyLearn": "Social icebreaker, storytelling, practice sleight of hand",
+      "currentStage": 0,
+      "completed": false,
+      "stages": [
+        {
+          "name": "Mechanics",
+          "description": "Learn the trick mechanics",
+          "hoursNeeded": 3,
+          "microGoals": ["Learn the moves", "Practice slow", "Practice fast", "Mirror practice"],
+          "resources": [
+            { "title": "Easy Card Tricks", "type": "video" }
+          ]
+        },
+        {
+          "name": "Presentation",
+          "description": "Build the performance",
+          "hoursNeeded": 5,
+          "microGoals": ["Script the patter", "Practice misdirection", "Rehearse 20 times", "Record yourself"],
+          "resources": [
+            { "title": "Performance Tips", "type": "article" }
+          ]
+        },
+        {
+          "name": "Performance",
+          "description": "Perform for real people",
+          "hoursNeeded": 2,
+          "microGoals": ["Perform for friend", "Perform for stranger", "Handle mistakes", "Get amazed reaction"],
+          "resources": [
+            { "title": "Handling Mistakes", "type": "article" }
+          ]
+        }
+      ]
+    }
+  ],
+  "MENTAL_SKILLS": [
+    {
+      "id": "speed_reading",
+      "name": "Speed Reading",
+      "category": "mental",
+      "description": "Double or triple your reading speed while maintaining comprehension.",
+      "icon": "⚡",
+      "difficulty": 2,
+      "estimatedHours": 20,
+      "whyLearn": "Consume knowledge faster, save time, learn more",
+      "currentStage": 0,
+      "completed": false,
+      "stages": [
+        {
+          "name": "Eliminate Subvocalization",
+          "description": "Stop hearing words in your head",
+          "hoursNeeded": 7,
+          "microGoals": ["Understand subvocalization", "Practice with pen", "Count while reading", "Chewing gum method"],
+          "resources": [
+            { "title": "Subvocalization Explained", "type": "article" }
+          ]
+        },
+        {
+          "name": "Expand Eye Span",
+          "description": "Read multiple words at once",
+          "hoursNeeded": 8,
+          "microGoals": ["Peripheral vision drills", "Two words at once", "Three words at once", "Chunk phrases"],
+          "resources": [
+            { "title": "Eye Span Exercises", "type": "video" }
+          ]
+        },
+        {
+          "name": "Speed & Comprehension",
+          "description": "Balance speed with understanding",
+          "hoursNeeded": 5,
+          "microGoals": ["Double speed baseline", "Test comprehension", "Triple speed", "Apply to daily reading"],
+          "resources": [
+            { "title": "Comprehension Tests", "type": "article" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "memory_palace",
+      "name": "Memory Palace",
+      "category": "mental",
+      "description": "Ancient technique to memorize vast amounts of information. Never forget again.",
+      "icon": "🏛️",
+      "difficulty": 3,
+      "estimatedHours": 15,
+      "whyLearn": "Incredible memory, impress people, learn languages faster",
+      "currentStage": 0,
+      "completed": false,
+      "stages": [
+        {
+          "name": "Build Your Palace",
+          "description": "Create mental locations",
+          "hoursNeeded": 5,
+          "microGoals": ["Choose familiar location", "Map 10 stations", "Walk it mentally", "Add more stations"],
+          "resources": [
+            { "title": "Memory Palace Basics", "type": "video" }
+          ]
+        },
+        {
+          "name": "Create Images",
+          "description": "Turn info into vivid mental pictures",
+          "hoursNeeded": 5,
+          "microGoals": ["Exaggeration technique", "Action technique", "Emotion technique", "Link to location"],
+          "resources": [
+            { "title": "Image Creation", "type": "article" }
+          ]
+        },
+        {
+          "name": "Application",
+          "description": "Use it for real information",
+          "hoursNeeded": 5,
+          "microGoals": ["Memorize 20 items", "Memorize speech", "Memorize deck of cards", "Recall perfectly"],
+          "resources": [
+            { "title": "Advanced Techniques", "type": "video" }
+          ]
+        }
+      ]
+    }
+  ],
+  "SURVIVAL_SKILLS": [
+    {
+      "id": "knot_tying",
+      "name": "Essential Knot Tying",
+      "category": "survival",
+      "description": "Master 5 essential knots for any situation. Be prepared.",
+      "icon": "🪢",
+      "difficulty": 1,
+      "estimatedHours": 5,
+      "whyLearn": "Practical utility, camping, emergencies, looks cool",
+      "currentStage": 0,
+      "completed": false,
+      "stages": [
+        {
+          "name": "Basic Knots",
+          "description": "Learn the most useful knots",
+          "hoursNeeded": 3,
+          "microGoals": ["Bowline (rescue loop)", "Clove hitch (attach to pole)", "Figure-8 (stopper)", "Sheet bend (join ropes)"],
+          "resources": [
+            { "title": "5 Essential Knots", "type": "video" }
+          ]
+        },
+        {
+          "name": "Speed & Application",
+          "description": "Tie them quickly and know when to use",
+          "hoursNeeded": 2,
+          "microGoals": ["Tie blindfolded", "Tie in 10 seconds", "Real scenario practice", "Teach someone"],
+          "resources": [
+            { "title": "Knot Applications", "type": "article" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "fire_making",
+      "name": "Fire Making (No Lighter)",
+      "category": "survival",
+      "description": "Start fire with matches, ferro rod, or friction. Primitive power.",
+      "icon": "🔥",
+      "difficulty": 3,
+      "estimatedHours": 10,
+      "whyLearn": "Survival essential, primal skill, camping confidence",
+      "currentStage": 0,
+      "completed": false,
+      "stages": [
+        {
+          "name": "Tinder & Preparation",
+          "description": "Learn to prepare fire materials",
+          "hoursNeeded": 3,
+          "microGoals": ["Find dry tinder", "Feather sticks", "Tinder bundle", "Kindling preparation"],
+          "resources": [
+            { "title": "Fire Materials", "type": "article" }
+          ]
+        },
+        {
+          "name": "Ignition Methods",
+          "description": "Master different fire starters",
+          "hoursNeeded": 5,
+          "microGoals": ["Matches in wind", "Ferro rod technique", "Bow drill basics", "Hand drill attempt"],
+          "resources": [
+            { "title": "Ferro Rod Mastery", "type": "video" },
+            { "title": "Friction Fire", "type": "video" }
+          ]
+        },
+        {
+          "name": "Real Conditions",
+          "description": "Make fire in challenging situations",
+          "hoursNeeded": 2,
+          "microGoals": ["Wet conditions", "No tools", "One match only", "Different environments"],
+          "resources": [
+            { "title": "Advanced Fire Making", "type": "article" }
+          ]
+        }
+      ]
+    }
+  ]
+}

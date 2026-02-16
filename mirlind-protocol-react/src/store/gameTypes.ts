@@ -1,0 +1,42 @@
+import { createContext } from 'react';
+import type { PlayerStats, ViewType, Toast, ActivityStats } from '../types';
+
+// ============================================================================
+// Context Creation
+// ============================================================================
+export interface GameContextType {
+  state: {
+    player: PlayerStats;
+    currentView: ViewType;
+    toasts: Toast[];
+    isLoading: boolean;
+    isAuthenticated: boolean;
+    username: string | null;
+  };
+  dispatch: React.Dispatch<GameAction>;
+  // View
+  setView: (view: ViewType) => void;
+  // Toast
+  showToast: (message: string, type?: Toast['type'], duration?: number) => void;
+  // Activity tracking
+  trackActivity: (type: keyof ActivityStats, value: number) => Promise<void>;
+  // Auth
+  login: (email: string, password: string) => Promise<void>;
+  register: (email: string, password: string, username: string) => Promise<void>;
+  logout: () => void;
+  // XP
+  addXP: (amount: number, skill: string) => Promise<void>;
+}
+
+export type GameAction =
+  | { type: 'UPDATE_PLAYER'; payload: Partial<PlayerStats> }
+  | { type: 'SET_PLAYER'; payload: PlayerStats }
+  | { type: 'SET_VIEW'; payload: ViewType }
+  | { type: 'ADD_TOAST'; payload: Toast }
+  | { type: 'REMOVE_TOAST'; payload: string }
+  | { type: 'SET_LOADING'; payload: boolean }
+  | { type: 'SET_AUTH'; payload: { isAuthenticated: boolean; username: string | null } }
+  | { type: 'TRACK_ACTIVITY'; payload: { type: keyof ActivityStats; value: number } }
+  | { type: 'ADD_XP'; payload: { amount: number; skill: string } };
+
+export const GameContext = createContext<GameContextType | undefined>(undefined);
