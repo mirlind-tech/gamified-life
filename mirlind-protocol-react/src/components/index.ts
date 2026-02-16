@@ -7,6 +7,7 @@ export { MainContent } from './MainContent';
 export { ToastContainer } from './ToastContainer';
 export type { Toast } from './Toast';
 export { AchievementBadge } from './AchievementBadge';
+export { WillpowerIndicator, StatDecayIndicator } from './WillpowerIndicator';
 export { CharacterAvatar } from './CharacterAvatar';
 export { Confetti } from './Confetti';
 export { ErrorBoundary } from './ErrorBoundary';

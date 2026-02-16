@@ -1,5 +1,6 @@
 import { createContext } from 'react';
 import type { PlayerStats, ViewType, Toast, ActivityStats } from '../types';
+import type { WillpowerAction } from '../utils/willpower';
 
 // ============================================================================
 // Context Creation
@@ -26,6 +27,11 @@ export interface GameContextType {
   logout: () => void;
   // XP
   addXP: (amount: number, skill: string) => Promise<void>;
+  // Willpower & Decay
+  modifyWillpower: (action: WillpowerAction) => number;
+  checkAndApplyDecay: () => { results: Array<{ stat: keyof PlayerStats['coreStats']; daysSinceUsed: number; gracePeriod: number; daysIntoDecay: number; decayAmount: number; newValue: number; isAtrophying: boolean }>; anyAtrophying: boolean };
+  exerciseStats: (activity: string, date?: string) => void;
+  dailyReset: () => void;
 }
 
 export type GameAction =
@@ -37,6 +43,11 @@ export type GameAction =
   | { type: 'SET_LOADING'; payload: boolean }
   | { type: 'SET_AUTH'; payload: { isAuthenticated: boolean; username: string | null } }
   | { type: 'TRACK_ACTIVITY'; payload: { type: keyof ActivityStats; value: number } }
-  | { type: 'ADD_XP'; payload: { amount: number; skill: string } };
+  | { type: 'ADD_XP'; payload: { amount: number; skill: string } }
+  // Willpower & Decay
+  | { type: 'UPDATE_WILLPOWER'; payload: { value: number; reason: string } }
+  | { type: 'APPLY_STAT_DECAY'; payload: { decayResults: Array<{ stat: keyof PlayerStats['coreStats']; newValue: number }> } }
+  | { type: 'EXERCISE_STAT'; payload: { stat: keyof PlayerStats['coreStats']; date?: string } }
+  | { type: 'DAILY_RESET' };
 
 export const GameContext = createContext<GameContextType | undefined>(undefined);

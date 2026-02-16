@@ -1,6 +1,7 @@
 import { useGame } from '../store/useGame';
 import { EMOJIS } from '../utils/emojis';
 import { motion } from 'framer-motion';
+import { WillpowerIndicator } from './WillpowerIndicator';
 
 const pillarConfig = [
   { id: 'craft', icon: EMOJIS.CRAFT, color: '#06b6d4', label: 'Craft' },
@@ -16,7 +17,6 @@ export function Header() {
 
   const willpower = player?.willpower ?? 100;
   const maxWillpower = player?.maxWillpower ?? 100;
-  const willpowerPercent = maxWillpower > 0 ? (willpower / maxWillpower) * 100 : 100;
 
   const pillars = player?.pillars ?? {
     craft: { level: 1 },
@@ -24,13 +24,6 @@ export function Header() {
     tongue: { level: 1 },
     principle: { level: 1 },
     capital: { level: 1 },
-  };
-
-  // Willpower color based on percentage
-  const getWillpowerColor = () => {
-    if (willpowerPercent > 60) return 'from-accent-green to-accent-cyan';
-    if (willpowerPercent > 30) return 'from-accent-yellow to-accent-orange';
-    return 'from-accent-red to-accent-pink';
   };
 
   return (
@@ -110,42 +103,17 @@ export function Header() {
 
           {/* Willpower Bar */}
           <motion.div 
-            className="flex items-center gap-2 lg:gap-3"
+            className="w-32 lg:w-48"
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
           >
-            <div className="flex flex-col items-end">
-              <span className="text-xs text-text-muted uppercase tracking-wider font-mono hidden sm:block">Willpower</span>
-              <span className="text-sm font-bold text-text-primary font-mono">
-                {willpower}<span className="text-text-muted">/{maxWillpower}</span>
-              </span>
-            </div>
-            
-            <div className="relative w-24 lg:w-40 h-3 bg-black/40 rounded-full overflow-hidden border border-white/5">
-              {/* Background glow */}
-              <div className={`absolute inset-0 bg-linear-to-r ${getWillpowerColor()} opacity-20`} />
-              
-              {/* Progress bar */}
-              <motion.div
-                className={`absolute inset-y-0 left-0 bg-linear-to-r ${getWillpowerColor()} rounded-full`}
-                initial={{ width: 0 }}
-                animate={{ width: `${willpowerPercent}%` }}
-                transition={{ duration: 0.8, ease: "easeOut" }}
-              />
-              
-              {/* Shine effect */}
-              <div className="absolute inset-0 bg-linear-to-r from-transparent via-white/20 to-transparent 
-                animate-shimmer" />
-              
-              {/* Glow at the tip */}
-              <motion.div 
-                className="absolute top-0 bottom-0 w-4 bg-white/50 blur-sm"
-                style={{ left: `calc(${willpowerPercent}% - 8px)` }}
-                animate={{ opacity: [0.5, 1, 0.5] }}
-                transition={{ duration: 2, repeat: Infinity }}
-              />
-            </div>
+            <WillpowerIndicator 
+              current={willpower} 
+              max={maxWillpower}
+              size="sm"
+              showLabel={false}
+            />
           </motion.div>
         </div>
       </div>

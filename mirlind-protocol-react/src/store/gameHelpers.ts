@@ -1,4 +1,4 @@
-import type { PlayerStats, ActivityStats, PillarType, Pillar, Skill, ProfessionalSkill } from '../types';
+import type { PlayerStats, ActivityStats, PillarType, Pillar, Skill, ProfessionalSkill, StatLastUsed } from '../types';
 import type { PlayerStats as BackendPlayerStats } from '../services/playerApi';
 
 export interface ApiUser {
@@ -62,6 +62,8 @@ export function transformUserToPlayer(user: ApiUser): PlayerStats {
     if (skill.id) professionalSkills[skill.id] = skill;
   });
 
+  const today = new Date().toISOString();
+  
   return {
     name: user.name || 'Unnamed Warrior',
     title: user.title || 'Novice Seeker',
@@ -90,7 +92,18 @@ export function transformUserToPlayer(user: ApiUser): PlayerStats {
     levelUpHistory: [],
     totalXPEarned: user.totalXPEarned ?? 0,
     questsCompleted: user.questsCompleted ?? 0,
-    startDate: user.startDate || new Date().toISOString(),
+    startDate: user.startDate || today,
+    statLastUsed: user.statLastUsed || {
+      strength: today,
+      agility: today,
+      intelligence: today,
+      wisdom: today,
+      charisma: today,
+      constitution: today,
+      discipline: today,
+      creativity: today,
+    } as StatLastUsed,
+    lastDecayCheck: user.lastDecayCheck || today,
   };
 }
 
@@ -112,6 +125,8 @@ export function transformBackendStatsToPlayer(stats: BackendPlayerStats): Player
     }
   });
 
+  const today = new Date().toISOString();
+  
   return {
     name: 'Unnamed Warrior',
     title: 'Novice Seeker',
@@ -143,6 +158,17 @@ export function transformBackendStatsToPlayer(stats: BackendPlayerStats): Player
     levelUpHistory: [],
     totalXPEarned: stats.xp || 0,
     questsCompleted: stats.activityStats?.questsCompleted || 0,
-    startDate: new Date().toISOString(),
+    startDate: today,
+    statLastUsed: {
+      strength: today,
+      agility: today,
+      intelligence: today,
+      wisdom: today,
+      charisma: today,
+      constitution: today,
+      discipline: today,
+      creativity: today,
+    },
+    lastDecayCheck: today,
   };
 }

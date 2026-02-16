@@ -6,6 +6,13 @@ import { removeToken } from '../services/authApi';
 import * as playerApi from '../services/playerApi';
 import { transformUserToPlayer, transformBackendStatsToPlayer } from './gameHelpers';
 import { GameContext, type GameAction } from './gameTypes';
+import { 
+  applyWillpowerChange, 
+  calculateAllStatDecay,
+  getXPMultiplier,
+  getStatsForActivity,
+  type WillpowerAction 
+} from '../utils/willpower';
 
 // ============================================================================
 // Initial State
@@ -24,6 +31,8 @@ const initialActivityStats: ActivityStats = {
 };
 
 // Re-export for use in createInitialPlayerState
+
+const today = new Date().toISOString();
 
 const createInitialPlayerState = (): PlayerStats => ({
   name: 'Unnamed Warrior',
@@ -59,7 +68,19 @@ const createInitialPlayerState = (): PlayerStats => ({
   levelUpHistory: [],
   totalXPEarned: 0,
   questsCompleted: 0,
-  startDate: new Date().toISOString(),
+  startDate: today,
+  // Stat decay tracking - all stats start as "used today"
+  statLastUsed: {
+    strength: today,
+    agility: today,
+    intelligence: today,
+    wisdom: today,
+    charisma: today,
+    constitution: today,
+    discipline: today,
+    creativity: today,
+  },
+  lastDecayCheck: today,
 });
 
 // ============================================================================
@@ -110,6 +131,48 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         player: {
           ...state.player,
           totalXPEarned: state.player.totalXPEarned + action.payload.amount,
+        },
+      };
+    case 'UPDATE_WILLPOWER':
+      return {
+        ...state,
+        player: {
+          ...state.player,
+          willpower: Math.max(0, Math.min(state.player.maxWillpower, action.payload.value)),
+        },
+      };
+    case 'APPLY_STAT_DECAY':
+      const newCoreStats = { ...state.player.coreStats };
+      action.payload.decayResults.forEach(({ stat, newValue }) => {
+        newCoreStats[stat] = newValue;
+      });
+      return {
+        ...state,
+        player: {
+          ...state.player,
+          coreStats: newCoreStats,
+          lastDecayCheck: new Date().toISOString(),
+        },
+      };
+    case 'EXERCISE_STAT':
+      return {
+        ...state,
+        player: {
+          ...state.player,
+          statLastUsed: {
+            ...state.player.statLastUsed,
+            [action.payload.stat]: action.payload.date || new Date().toISOString(),
+          },
+        },
+      };
+    case 'DAILY_RESET':
+      // Natural willpower regeneration (30% of max)
+      const recovery = Math.floor(state.player.maxWillpower * 0.3);
+      return {
+        ...state,
+        player: {
+          ...state.player,
+          willpower: Math.min(state.player.maxWillpower, state.player.willpower + recovery),
         },
       };
     default:
@@ -164,11 +227,16 @@ export function GameProvider({ children }: { children: ReactNode }) {
 
   // Add XP - calls backend and handles level up
   const addXP = useCallback(async (amount: number, pillarType: string) => {
-    dispatch({ type: 'ADD_XP', payload: { amount, skill: pillarType } });
+    // Apply willpower multiplier
+    const willpowerPercent = (state.player.willpower / state.player.maxWillpower) * 100;
+    const multiplier = getXPMultiplier(willpowerPercent);
+    const adjustedAmount = Math.floor(amount * multiplier);
+    
+    dispatch({ type: 'ADD_XP', payload: { amount: adjustedAmount, skill: pillarType } });
     
     if (state.isAuthenticated && !useLocalStorage) {
       try {
-        const result = await playerApi.addXP(amount, pillarType);
+        const result = await playerApi.addXP(adjustedAmount, pillarType);
         
         // Show level up notification
         if (result.levelUp) {
@@ -187,7 +255,76 @@ export function GameProvider({ children }: { children: ReactNode }) {
         logger.error('Failed to add XP:', error);
       }
     }
-  }, [state.isAuthenticated, useLocalStorage, showToast]);
+  }, [state.isAuthenticated, useLocalStorage, showToast, state.player.willpower, state.player.maxWillpower]);
+
+  // ============================================================================
+  // Willpower System
+  // ============================================================================
+
+  const modifyWillpower = useCallback((action: WillpowerAction) => {
+    const { newValue, change, message } = applyWillpowerChange(
+      state.player.willpower,
+      state.player.maxWillpower,
+      action
+    );
+    
+    if (change !== 0) {
+      dispatch({ type: 'UPDATE_WILLPOWER', payload: { value: newValue, reason: action.type } });
+      
+      if (message) {
+        const type = change > 0 ? 'success' : 'warning';
+        showToast(message, type, 2000);
+      }
+    }
+    
+    return newValue;
+  }, [state.player.willpower, state.player.maxWillpower, showToast]);
+
+  // ============================================================================
+  // Stat Decay System
+  // ============================================================================
+
+  const checkAndApplyDecay = useCallback(() => {
+    const { results, anyAtrophying } = calculateAllStatDecay(
+      state.player.coreStats,
+      state.player.statLastUsed,
+      state.player.lastDecayCheck
+    );
+    
+    // Filter only stats that actually decayed
+    const decayResults = results
+      .filter(r => r.decayAmount > 0)
+      .map(r => ({ stat: r.stat, newValue: r.newValue }));
+    
+    if (decayResults.length > 0) {
+      dispatch({ type: 'APPLY_STAT_DECAY', payload: { decayResults } });
+      
+      // Show warning toast
+      const decayedStats = decayResults.map(r => r.stat).join(', ');
+      showToast(
+        `⚠️ Stats decaying: ${decayedStats}. Use them or lose them!`,
+        'warning',
+        5000
+      );
+    }
+    
+    return { results, anyAtrophying };
+  }, [state.player.coreStats, state.player.statLastUsed, state.player.lastDecayCheck, showToast]);
+
+  const exerciseStats = useCallback((activity: string, date?: string) => {
+    const statsToExercise = getStatsForActivity(activity);
+    const exerciseDate = date || new Date().toISOString();
+    
+    statsToExercise.forEach(stat => {
+      dispatch({ type: 'EXERCISE_STAT', payload: { stat, date: exerciseDate } });
+    });
+  }, []);
+
+  // Daily reset - called once per day
+  const dailyReset = useCallback(() => {
+    dispatch({ type: 'DAILY_RESET' });
+    checkAndApplyDecay();
+  }, [checkAndApplyDecay]);
 
   // Auth: Login
   const login = useCallback(async (email: string, password: string) => {
@@ -290,6 +427,30 @@ export function GameProvider({ children }: { children: ReactNode }) {
     }
   }, [state.player, state.isLoading, useLocalStorage]);
 
+  // Daily willpower reset and stat decay check
+  useEffect(() => {
+    if (state.isLoading) return;
+
+    const checkDailyReset = () => {
+      const today = new Date().toDateString();
+      const lastCheck = new Date(state.player.lastDecayCheck).toDateString();
+      
+      if (today !== lastCheck) {
+        // New day - apply daily reset
+        dailyReset();
+        showToast('🌅 New day! Willpower restored. Stats checked for decay.', 'info', 3000);
+      }
+    };
+
+    // Check immediately on load
+    checkDailyReset();
+
+    // Set up interval to check every hour
+    const interval = setInterval(checkDailyReset, 60 * 60 * 1000);
+
+    return () => clearInterval(interval);
+  }, [state.isLoading, state.player.lastDecayCheck, dailyReset, showToast]);
+
   return (
     <GameContext.Provider value={{ 
       state, 
@@ -301,6 +462,11 @@ export function GameProvider({ children }: { children: ReactNode }) {
       register, 
       logout,
       addXP,
+      // Willpower & Decay
+      modifyWillpower,
+      checkAndApplyDecay,
+      exerciseStats,
+      dailyReset,
     }}>
       {children}
     </GameContext.Provider>
