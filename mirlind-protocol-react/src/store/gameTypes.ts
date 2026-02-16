@@ -1,5 +1,5 @@
 import { createContext } from 'react';
-import type { PlayerStats, ViewType, Toast, ActivityStats } from '../types';
+import type { PlayerStats, ViewType, Toast, ActivityStats, PillarType } from '../types';
 import type { WillpowerAction } from '../utils/willpower';
 
 // ============================================================================
@@ -32,6 +32,9 @@ export interface GameContextType {
   checkAndApplyDecay: () => { results: Array<{ stat: keyof PlayerStats['coreStats']; daysSinceUsed: number; gracePeriod: number; daysIntoDecay: number; decayAmount: number; newValue: number; isAtrophying: boolean }>; anyAtrophying: boolean };
   exerciseStats: (activity: string, date?: string) => void;
   dailyReset: () => void;
+  // Stat Gains
+  gainStats: (activityKey: string) => { newStats: PlayerStats['coreStats']; gains: Array<{ stat: keyof PlayerStats['coreStats']; amount: number }> };
+  gainStatsFromPillarLevel: (pillar: PillarType, newLevel: number) => Array<{ stat: keyof PlayerStats['coreStats']; amount: number }>;
 }
 
 export type GameAction =
@@ -48,6 +51,9 @@ export type GameAction =
   | { type: 'UPDATE_WILLPOWER'; payload: { value: number; reason: string } }
   | { type: 'APPLY_STAT_DECAY'; payload: { decayResults: Array<{ stat: keyof PlayerStats['coreStats']; newValue: number }> } }
   | { type: 'EXERCISE_STAT'; payload: { stat: keyof PlayerStats['coreStats']; date?: string } }
-  | { type: 'DAILY_RESET' };
+  | { type: 'DAILY_RESET' }
+  // Stat Gains
+  | { type: 'GAIN_STATS'; payload: { gains: Array<{ stat: keyof PlayerStats['coreStats']; amount: number }>; activity: string } }
+  | { type: 'PILLAR_LEVEL_STAT_GAIN'; payload: { pillar: PillarType; newLevel: number } };
 
 export const GameContext = createContext<GameContextType | undefined>(undefined);

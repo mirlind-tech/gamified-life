@@ -2,7 +2,8 @@ import type {
   CoreStats, 
   StatLastUsed, 
   WillpowerStatus,
-  WillpowerState 
+  WillpowerState,
+  PillarType 
 } from '../types';
 import { 
   WILLPOWER_COSTS, 
@@ -119,6 +120,289 @@ export function applyWillpowerChange(
 }
 
 // ============================================================================
+// Stat Gain System - How stats INCREASE
+// ============================================================================
+
+// Stat gain from activities (per activity completion)
+export const STAT_GAINS = {
+  // Physical - fast gains
+  strength: {
+    heavyLifting: 0.5,      // Heavy compound lifts
+    bodyweightTraining: 0.3, // Push-ups, pull-ups
+    manualLabor: 0.2,       // Construction work
+  },
+  agility: {
+    cardio: 0.4,            // Running, HIIT
+    sports: 0.3,            // Basketball, martial arts
+    stretching: 0.2,        // Dynamic stretching
+  },
+  constitution: {
+    cardio: 0.3,
+    enduranceWork: 0.4,     // Long runs, cycling
+    coldExposure: 0.2,      // Cold showers
+    healthyEating: 0.1,     // Following diet
+  },
+  
+  // Mental - slower gains
+  intelligence: {
+    coding: 0.3,            // Programming
+    studying: 0.3,          // Reading technical books
+    problemSolving: 0.2,    // Solving complex problems
+    learning: 0.2,          // Learning new concepts
+  },
+  wisdom: {
+    meditation: 0.3,
+    journaling: 0.2,
+    reflection: 0.2,        // Reviewing decisions
+    readingPhilosophy: 0.3, // Philosophy books
+  },
+  creativity: {
+    coding: 0.2,
+    writing: 0.3,           // Creative writing
+    problemSolving: 0.2,
+    sideProjects: 0.3,      // Building things
+  },
+  
+  // Social
+  charisma: {
+    languageLearning: 0.3,  // German practice
+    socializing: 0.2,       // Talking to people
+    publicSpeaking: 0.4,    // Presentations, explaining
+    teaching: 0.3,          // Teaching others
+  },
+  
+  // Mental fortitude
+  discipline: {
+    completeHabit: 0.1,     // Any habit completion
+    coldShower: 0.2,
+    wakeUpEarly: 0.2,       // 05:00 wake
+    deepWork: 0.15,         // 2hr focus session
+    resistTemptation: 0.3,  // Saying no to distractions
+  },
+} as const;
+
+// Calculate stat gain from an activity
+type ActivityType = keyof typeof STAT_GAINS[keyof typeof STAT_GAINS];
+
+export function calculateStatGain(
+  stat: keyof CoreStats,
+  activity: ActivityType,
+  intensity: 'low' | 'medium' | 'high' = 'medium',
+  durationMinutes: number = 60
+): number {
+  const gains = STAT_GAINS[stat];
+  if (!gains) return 0;
+  
+  const baseGain = gains[activity as keyof typeof gains] || 0;
+  if (baseGain === 0) return 0;
+  
+  // Intensity multiplier
+  const intensityMultiplier = {
+    low: 0.5,
+    medium: 1.0,
+    high: 1.5,
+  };
+  
+  // Duration bonus (diminishing returns after 60 min)
+  const durationBonus = Math.min(durationMinutes / 60, 2);
+  
+  return baseGain * intensityMultiplier[intensity] * durationBonus;
+}
+
+// Map activities to their primary stats and gain amounts
+export interface StatGainActivity {
+  activity: string;
+  stats: Array<{ stat: keyof CoreStats; amount: number }>;
+  description: string;
+}
+
+export const ACTIVITY_STAT_GAINS: Record<string, StatGainActivity> = {
+  gym: {
+    activity: 'Gym Workout',
+    stats: [
+      { stat: 'strength', amount: 0.4 },
+      { stat: 'constitution', amount: 0.2 },
+      { stat: 'discipline', amount: 0.15 },
+    ],
+    description: 'Weight training and resistance exercises',
+  },
+  cardio: {
+    activity: 'Cardio Session',
+    stats: [
+      { stat: 'agility', amount: 0.4 },
+      { stat: 'constitution', amount: 0.3 },
+      { stat: 'discipline', amount: 0.1 },
+    ],
+    description: 'Running, cycling, or high-intensity cardio',
+  },
+  coding: {
+    activity: 'Coding Session',
+    stats: [
+      { stat: 'intelligence', amount: 0.3 },
+      { stat: 'creativity', amount: 0.2 },
+      { stat: 'discipline', amount: 0.15 },
+    ],
+    description: 'Deep work programming session',
+  },
+  german: {
+    activity: 'German Study',
+    stats: [
+      { stat: 'charisma', amount: 0.3 },
+      { stat: 'intelligence', amount: 0.2 },
+      { stat: 'discipline', amount: 0.15 },
+    ],
+    description: 'Language learning and practice',
+  },
+  meditation: {
+    activity: 'Meditation',
+    stats: [
+      { stat: 'wisdom', amount: 0.3 },
+      { stat: 'discipline', amount: 0.2 },
+      { stat: 'constitution', amount: 0.1 },
+    ],
+    description: 'Mindfulness and mental training',
+  },
+  journal: {
+    activity: 'Journaling',
+    stats: [
+      { stat: 'wisdom', amount: 0.2 },
+      { stat: 'intelligence', amount: 0.15 },
+      { stat: 'creativity', amount: 0.15 },
+    ],
+    description: 'Daily reflection and planning',
+  },
+  coldShower: {
+    activity: 'Cold Shower',
+    stats: [
+      { stat: 'discipline', amount: 0.2 },
+      { stat: 'constitution', amount: 0.2 },
+    ],
+    description: 'Cold exposure for mental and physical resilience',
+  },
+  reading: {
+    activity: 'Reading',
+    stats: [
+      { stat: 'intelligence', amount: 0.25 },
+      { stat: 'wisdom', amount: 0.2 },
+    ],
+    description: 'Reading books or educational content',
+  },
+  social: {
+    activity: 'Socializing',
+    stats: [
+      { stat: 'charisma', amount: 0.3 },
+    ],
+    description: 'Meaningful social interaction',
+  },
+  deepWork: {
+    activity: 'Deep Work',
+    stats: [
+      { stat: 'intelligence', amount: 0.25 },
+      { stat: 'discipline', amount: 0.2 },
+      { stat: 'creativity', amount: 0.15 },
+    ],
+    description: '2+ hours of focused, distraction-free work',
+  },
+  wakeUpEarly: {
+    activity: 'Early Wake',
+    stats: [
+      { stat: 'discipline', amount: 0.2 },
+    ],
+    description: 'Waking at 05:00 consistently',
+  },
+  perfectDay: {
+    activity: 'Perfect Day',
+    stats: [
+      { stat: 'discipline', amount: 0.5 },
+      { stat: 'constitution', amount: 0.2 },
+    ],
+    description: 'Completing all daily protocols',
+  },
+};
+
+// Apply stat gains from an activity
+export function applyStatGains(
+  currentStats: CoreStats,
+  activityKey: string
+): { newStats: CoreStats; gains: Array<{ stat: keyof CoreStats; amount: number }> } {
+  const activity = ACTIVITY_STAT_GAINS[activityKey];
+  if (!activity) {
+    return { newStats: currentStats, gains: [] };
+  }
+  
+  const newStats = { ...currentStats };
+  const gains: Array<{ stat: keyof CoreStats; amount: number }> = [];
+  
+  activity.stats.forEach(({ stat, amount }) => {
+    // Soft cap at 50 (very difficult to exceed)
+    const currentValue = newStats[stat];
+    const effectiveGain = currentValue >= 50 
+      ? amount * 0.1  // 90% reduction above 50
+      : currentValue >= 40 
+        ? amount * 0.3  // 70% reduction 40-50
+        : currentValue >= 30
+          ? amount * 0.6  // 40% reduction 30-40
+          : amount;       // Full gain below 30
+    
+    newStats[stat] = Math.min(60, currentValue + effectiveGain);
+    gains.push({ stat, amount: effectiveGain });
+  });
+  
+  return { newStats, gains };
+}
+
+// Passive stat gains from pillar leveling
+export function getPassiveStatGainFromPillar(
+  pillar: PillarType,
+  newLevel: number
+): Array<{ stat: keyof CoreStats; amount: number }> {
+  const gains: Record<PillarType, Array<{ stat: keyof CoreStats; amount: number }>> = {
+    craft: [
+      { stat: 'intelligence', amount: newLevel * 0.5 },
+      { stat: 'creativity', amount: newLevel * 0.3 },
+    ],
+    vessel: [
+      { stat: 'strength', amount: newLevel * 0.4 },
+      { stat: 'constitution', amount: newLevel * 0.4 },
+      { stat: 'agility', amount: newLevel * 0.3 },
+    ],
+    tongue: [
+      { stat: 'charisma', amount: newLevel * 0.5 },
+      { stat: 'intelligence', amount: newLevel * 0.2 },
+    ],
+    principle: [
+      { stat: 'wisdom', amount: newLevel * 0.5 },
+      { stat: 'discipline', amount: newLevel * 0.4 },
+    ],
+    capital: [
+      { stat: 'wisdom', amount: newLevel * 0.3 },
+      { stat: 'discipline', amount: newLevel * 0.3 },
+    ],
+  };
+  
+  return gains[pillar] || [];
+}
+
+// Get all ways to increase a specific stat
+export function getStatTrainingOptions(stat: keyof CoreStats): Array<{ activity: string; gain: number; description: string }> {
+  const options: Array<{ activity: string; gain: number; description: string }> = [];
+  
+  Object.entries(ACTIVITY_STAT_GAINS).forEach(([key, data]) => {
+    const statGain = data.stats.find(s => s.stat === stat);
+    if (statGain) {
+      options.push({
+        activity: data.activity,
+        gain: statGain.amount,
+        description: data.description,
+      });
+    }
+  });
+  
+  // Sort by gain amount
+  return options.sort((a, b) => b.gain - a.gain);
+}
+
+// ============================================================================
 // Stat Decay System
 // ============================================================================
 
@@ -221,10 +505,10 @@ export function getDecayStatusColor(status: ReturnType<typeof getStatDecayStatus
 }
 
 // ============================================================================
-// Activity Tracking for Stats
+// Activity Tracking for Stats (for lastUsed only)
 // ============================================================================
 
-// Map activities to stats they exercise
+// Map activities to stats they exercise (for lastUsed tracking)
 export const ACTIVITY_TO_STATS: Record<string, Array<keyof CoreStats>> = {
   gym: ['strength', 'constitution', 'discipline'],
   coding: ['intelligence', 'creativity', 'discipline'],
@@ -235,7 +519,7 @@ export const ACTIVITY_TO_STATS: Record<string, Array<keyof CoreStats>> = {
   deepWork: ['intelligence', 'discipline', 'creativity'],
   cardio: ['agility', 'constitution', 'discipline'],
   reading: ['intelligence', 'wisdom'],
-  social: ['charisma', 'confidence'],
+  social: ['charisma'],
 };
 
 export function getStatsForActivity(activity: string): Array<keyof CoreStats> {

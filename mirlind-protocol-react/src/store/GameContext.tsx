@@ -11,6 +11,8 @@ import {
   calculateAllStatDecay,
   getXPMultiplier,
   getStatsForActivity,
+  applyStatGains,
+  getPassiveStatGainFromPillar,
   type WillpowerAction 
 } from '../utils/willpower';
 
@@ -175,6 +177,31 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           willpower: Math.min(state.player.maxWillpower, state.player.willpower + recovery),
         },
       };
+    case 'GAIN_STATS':
+      const gainedStats = { ...state.player.coreStats };
+      action.payload.gains.forEach(({ stat, amount }) => {
+        gainedStats[stat] = Math.min(60, gainedStats[stat] + amount);
+      });
+      return {
+        ...state,
+        player: {
+          ...state.player,
+          coreStats: gainedStats,
+        },
+      };
+    case 'PILLAR_LEVEL_STAT_GAIN':
+      const pillarGains = getPassiveStatGainFromPillar(action.payload.pillar, action.payload.newLevel);
+      const newStatsAfterPillar = { ...state.player.coreStats };
+      pillarGains.forEach(({ stat, amount }) => {
+        newStatsAfterPillar[stat] = Math.min(60, newStatsAfterPillar[stat] + amount);
+      });
+      return {
+        ...state,
+        player: {
+          ...state.player,
+          coreStats: newStatsAfterPillar,
+        },
+      };
     default:
       return state;
   }
@@ -319,6 +346,49 @@ export function GameProvider({ children }: { children: ReactNode }) {
       dispatch({ type: 'EXERCISE_STAT', payload: { stat, date: exerciseDate } });
     });
   }, []);
+
+  // Gain stats from completing an activity
+  const gainStats = useCallback((activityKey: string) => {
+    const { newStats, gains } = applyStatGains(state.player.coreStats, activityKey);
+    
+    if (gains.length > 0) {
+      dispatch({ 
+        type: 'GAIN_STATS', 
+        payload: { gains, activity: activityKey } 
+      });
+      
+      // Show toast for stat gains
+      const gainText = gains
+        .map(g => `${g.stat} +${g.amount.toFixed(2)}`)
+        .join(', ');
+      showToast(`💪 Stat gains: ${gainText}`, 'success', 3000);
+      
+      // Also exercise the stats (update last used)
+      exerciseStats(activityKey);
+    }
+    
+    return { newStats, gains };
+  }, [state.player.coreStats, showToast, exerciseStats]);
+
+  // Gain stats from pillar leveling
+  const gainStatsFromPillarLevel = useCallback((pillar: PillarType, newLevel: number) => {
+    const gains = getPassiveStatGainFromPillar(pillar, newLevel);
+    
+    if (gains.length > 0) {
+      dispatch({ 
+        type: 'PILLAR_LEVEL_STAT_GAIN', 
+        payload: { pillar, newLevel } 
+      });
+      
+      // Show toast for passive gains
+      const gainText = gains
+        .map(g => `${g.stat} +${g.amount.toFixed(1)}`)
+        .join(', ');
+      showToast(`📈 ${pillar} Level ${newLevel}! Gains: ${gainText}`, 'success', 4000);
+    }
+    
+    return gains;
+  }, [showToast]);
 
   // Daily reset - called once per day
   const dailyReset = useCallback(() => {
@@ -467,6 +537,9 @@ export function GameProvider({ children }: { children: ReactNode }) {
       checkAndApplyDecay,
       exerciseStats,
       dailyReset,
+      // Stat Gains
+      gainStats,
+      gainStatsFromPillarLevel,
     }}>
       {children}
     </GameContext.Provider>
