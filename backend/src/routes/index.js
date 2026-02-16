@@ -5,6 +5,8 @@ const bodyRoutes = require('./body');
 const germanRoutes = require('./german');
 const financeRoutes = require('./finance');
 const protocolRoutes = require('./protocol');
+const codeRoutes = require('./code');
+const workoutRoutes = require('./workouts');
 
 const router = express.Router();
 
@@ -20,5 +22,7 @@ router.use('/body', bodyRoutes);
 router.use('/german', germanRoutes);
 router.use('/finance', financeRoutes);
 router.use('/protocol', protocolRoutes);
+router.use('/code', codeRoutes);
+router.use('/workouts', workoutRoutes);
 
 module.exports = router;

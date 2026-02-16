@@ -15,8 +15,8 @@ import { CodingRoadmapTab, MindsetTab } from './cards';
 export function CardsView() {
   const { state } = useGame();
   const [activeTab, setActiveTab] = useState<'code' | 'mindset'>('code');
-  const [teachings, setTeachings] = useState<FangYuanTeaching[]>([]);
-  const [dailyTeaching, setDailyTeaching] = useState<FangYuanTeaching | null>(null);
+  const [teachings, setTeachings] = useState<FangYuanTeaching[]>(() => getUnlockedTeachings());
+  const [dailyTeaching, setDailyTeaching] = useState<FangYuanTeaching | null>(() => getDailyTeaching());
   const [selectedTeaching, setSelectedTeaching] = useState<FangYuanTeaching | null>(null);
   const [quizQuestion, setQuizQuestion] = useState<QuizQuestion | null>(null);
   const [quizAnswered, setQuizAnswered] = useState<number | null>(null);

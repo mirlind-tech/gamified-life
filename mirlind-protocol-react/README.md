@@ -23,7 +23,7 @@ Transform yourself into:
 
 ## 📖 DOCUMENTATION
 
-### 👉 [MIRLIND_TRANSFORMATION.md](./MIRLIND_TRANSFORMATION.md) 👈
+### 👉 [docs/TRANSFORMATION.md](../docs/TRANSFORMATION.md) 👈
 **YOUR COMPLETE TRANSFORMATION BLUEPRINT**
 
 This document contains:
@@ -171,7 +171,7 @@ src/
 
 **Everything you need is here:**
 
-### [MIRLIND_TRANSFORMATION.md](./MIRLIND_TRANSFORMATION.md)
+### [docs/TRANSFORMATION.md](../docs/TRANSFORMATION.md)
 
 - Daily schedule
 - Gym program (Baki body)

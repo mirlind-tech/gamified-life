@@ -39,7 +39,7 @@ export function CodingRoadmapTab() {
           <motion.div
             initial={{ width: 0 }}
             animate={{ width: `${progressPercent}%` }}
-            className="h-full bg-gradient-to-r from-accent-cyan to-accent-blue rounded-full"
+            className="h-full bg-linear-to-r from-accent-cyan to-accent-blue rounded-full"
           />
         </div>
       </div>

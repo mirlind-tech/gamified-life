@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { EMOJIS } from '../utils/emojis';
 import {
@@ -8,19 +8,16 @@ import {
   getCategoryColor,
   getCategoryIcon,
   getDifficultyStars,
-  ALL_SKILLS,
   type MasterySkill,
 } from '../data/skills';
 
 export function TreeView() {
-  const [skills, setSkills] = useState<MasterySkill[]>([]);
+  const [skills, setSkills] = useState<MasterySkill[]>(() => getUserSkills());
   const [selectedSkill, setSelectedSkill] = useState<MasterySkill | null>(null);
   const [activeCategory, setActiveCategory] = useState<string>('all');
   const [filter, setFilter] = useState<'all' | 'in-progress' | 'completed'>('all');
 
-  useEffect(() => {
-    setSkills(getUserSkills());
-  }, []);
+  // Skills are loaded via lazy initialization above
 
   const categories = [
     { id: 'all', name: 'All Skills', icon: '🔥' },
@@ -268,12 +265,13 @@ function SkillDetailModal({
   onStart,
   onCompleteStage,
 }: {
-  skill: Skill;
+  skill: MasterySkill;
   onClose: () => void;
   onStart: () => void;
   onCompleteStage: (index: number) => void;
 }) {
-  const [activeStage, setActiveStage] = useState(skill.currentStage);
+  // Track current stage for UI display
+  const currentStageIndex = skill.currentStage;
 
   return (
     <motion.div

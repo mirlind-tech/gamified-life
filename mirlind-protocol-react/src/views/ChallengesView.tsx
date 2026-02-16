@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { EMOJIS } from '../utils/emojis';
 import { useGame } from '../store/useGame';
@@ -37,8 +37,7 @@ export function ChallengesView() {
   const [showConfetti, setShowConfetti] = useState(false);
 
   // Special challenges state
-  const [specialChallenges, setSpecialChallenges] = useState(() => getActiveSpecialChallenges());
-  const [selectedSpecial, setSelectedSpecial] = useState<SpecialChallenge | null>(null);
+  const [specialChallenges] = useState(() => getActiveSpecialChallenges());
 
   const handleComplete = async (challenge: Challenge) => {
     if (completedToday.includes(challenge.id)) return;

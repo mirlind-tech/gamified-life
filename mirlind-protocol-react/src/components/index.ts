@@ -5,7 +5,7 @@ export { MainContent } from './MainContent';
 
 // UI components
 export { ToastContainer } from './ToastContainer';
-export { Toast } from './Toast';
+export type { Toast } from './Toast';
 export { AchievementBadge } from './AchievementBadge';
 export { CharacterAvatar } from './CharacterAvatar';
 export { Confetti } from './Confetti';
