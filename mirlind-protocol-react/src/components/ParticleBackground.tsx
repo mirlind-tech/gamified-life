@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 interface Particle {
   x: number;
@@ -8,124 +8,120 @@ interface Particle {
   size: number;
   opacity: number;
   color: string;
-  pulse: number;
-  pulseSpeed: number;
 }
 
 const COLORS = [
-  'rgba(139, 92, 246, 0.5)',  // Purple
-  'rgba(6, 182, 212, 0.4)',   // Cyan
-  'rgba(236, 72, 153, 0.4)',  // Pink
-  'rgba(168, 85, 247, 0.3)',  // Light purple
+  'rgba(139, 92, 246, 0.4)',
+  'rgba(6, 182, 212, 0.3)',
+  'rgba(236, 72, 153, 0.3)',
 ];
 
 export function ParticleBackground() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const particlesRef = useRef<Particle[]>([]);
-  const mouseRef = useRef({ x: 0, y: 0 });
   const animationRef = useRef<number>(0);
+  const frameCountRef = useRef(0);
+  const [isVisible, setIsVisible] = useState(true);
 
   useEffect(() => {
+    // Check if user prefers reduced motion
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (prefersReducedMotion) {
+      setIsVisible(false);
+      return;
+    }
+
+    // Check if mobile (reduce particles on mobile)
+    const isMobile = window.innerWidth < 768;
+    if (isMobile) {
+      setIsVisible(false); // Disable canvas on mobile for performance
+      return;
+    }
+
     const canvas = canvasRef.current;
     if (!canvas) return;
 
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Set canvas size
+    // Set canvas size with device pixel ratio consideration
+    const dpr = Math.min(window.devicePixelRatio, 2);
     const resize = () => {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
+      canvas.width = window.innerWidth * dpr;
+      canvas.height = window.innerHeight * dpr;
+      canvas.style.width = `${window.innerWidth}px`;
+      canvas.style.height = `${window.innerHeight}px`;
+      ctx.scale(dpr, dpr);
     };
     resize();
-    window.addEventListener('resize', resize);
 
-    // Initialize particles
-    const particleCount = Math.min(30, Math.floor(window.innerWidth / 50));
+    // Debounced resize listener
+    let resizeTimeout: ReturnType<typeof setTimeout>;
+    const handleResize = () => {
+      clearTimeout(resizeTimeout);
+      resizeTimeout = setTimeout(resize, 200);
+    };
+    window.addEventListener('resize', handleResize);
+
+    // Initialize particles - reduced count for performance
+    const particleCount = Math.min(20, Math.floor(window.innerWidth / 80));
     particlesRef.current = Array.from({ length: particleCount }, () => ({
-      x: Math.random() * canvas.width,
-      y: Math.random() * canvas.height,
-      vx: (Math.random() - 0.5) * 0.3,
-      vy: (Math.random() - 0.5) * 0.3,
+      x: Math.random() * window.innerWidth,
+      y: Math.random() * window.innerHeight,
+      vx: (Math.random() - 0.5) * 0.2,
+      vy: (Math.random() - 0.5) * 0.2,
       size: Math.random() * 2 + 1,
-      opacity: Math.random() * 0.5 + 0.2,
+      opacity: Math.random() * 0.3 + 0.2,
       color: COLORS[Math.floor(Math.random() * COLORS.length)],
-      pulse: 0,
-      pulseSpeed: Math.random() * 0.02 + 0.01,
     }));
 
-    // Track mouse
-    const handleMouseMove = (e: MouseEvent) => {
-      mouseRef.current = { x: e.clientX, y: e.clientY };
-    };
-    window.addEventListener('mousemove', handleMouseMove, { passive: true });
-
-    // Animation loop
-    let frameCount = 0;
+    // Animation loop with frame skipping for performance
     const animate = () => {
-      frameCount++;
-      // Render every 2nd frame for performance (30fps)
-      if (frameCount % 2 !== 0) {
-        animationRef.current = requestAnimationFrame(animate);
-        return;
-      }
+      frameCountRef.current++;
+      
+      // Render every 2nd frame (30fps instead of 60fps)
+      if (frameCountRef.current % 2 === 0) {
+        ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
 
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+        particlesRef.current.forEach((particle) => {
+          // Update position
+          particle.x += particle.vx;
+          particle.y += particle.vy;
 
-      particlesRef.current.forEach((particle, i) => {
-        // Update position
-        particle.x += particle.vx;
-        particle.y += particle.vy;
-        particle.pulse += particle.pulseSpeed;
+          // Wrap around screen
+          if (particle.x < 0) particle.x = window.innerWidth;
+          if (particle.x > window.innerWidth) particle.x = 0;
+          if (particle.y < 0) particle.y = window.innerHeight;
+          if (particle.y > window.innerHeight) particle.y = 0;
 
-        // Wrap around screen
-        if (particle.x < 0) particle.x = canvas.width;
-        if (particle.x > canvas.width) particle.x = 0;
-        if (particle.y < 0) particle.y = canvas.height;
-        if (particle.y > canvas.height) particle.y = 0;
+          // Draw particle
+          ctx.beginPath();
+          ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
+          ctx.fillStyle = particle.color;
+          ctx.fill();
+        });
 
-        // Pulsing opacity
-        const pulseOpacity = particle.opacity + Math.sin(particle.pulse) * 0.2;
-
-        // Draw particle with glow
-        const gradient = ctx.createRadialGradient(
-          particle.x, particle.y, 0,
-          particle.x, particle.y, particle.size * 3
-        );
-        gradient.addColorStop(0, particle.color.replace(/[\d.]+\)$/, `${Math.max(0, pulseOpacity)})`));
-        gradient.addColorStop(0.4, particle.color.replace(/[\d.]+\)$/, `${Math.max(0, pulseOpacity * 0.5)})`));
-        gradient.addColorStop(1, 'transparent');
-
-        ctx.beginPath();
-        ctx.arc(particle.x, particle.y, particle.size * 3, 0, Math.PI * 2);
-        ctx.fillStyle = gradient;
-        ctx.fill();
-
-        // Core
-        ctx.beginPath();
-        ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
-        ctx.fillStyle = particle.color.replace(/[\d.]+\)$/, `${Math.max(0.3, pulseOpacity)})`);
-        ctx.fill();
-
-        // Draw connections (only check every 5th particle for performance)
-        if (i % 5 === 0) {
-          particlesRef.current.slice(i + 1).forEach((other, j) => {
-            if (j % 3 !== 0) return; // Skip some connections
-            const dx = particle.x - other.x;
-            const dy = particle.y - other.y;
+        // Draw connections (limited for performance)
+        ctx.strokeStyle = 'rgba(139, 92, 246, 0.1)';
+        ctx.lineWidth = 0.5;
+        
+        for (let i = 0; i < particlesRef.current.length; i++) {
+          let connections = 0;
+          for (let j = i + 1; j < particlesRef.current.length && connections < 2; j++) {
+            const dx = particlesRef.current[i].x - particlesRef.current[j].x;
+            const dy = particlesRef.current[i].y - particlesRef.current[j].y;
             const distance = Math.sqrt(dx * dx + dy * dy);
 
             if (distance < 100) {
               ctx.beginPath();
-              ctx.moveTo(particle.x, particle.y);
-              ctx.lineTo(other.x, other.y);
-              ctx.strokeStyle = `rgba(139, 92, 246, ${0.1 * (1 - distance / 100)})`;
-              ctx.lineWidth = 0.5;
+              ctx.moveTo(particlesRef.current[i].x, particlesRef.current[i].y);
+              ctx.lineTo(particlesRef.current[j].x, particlesRef.current[j].y);
               ctx.stroke();
+              connections++;
             }
-          });
+          }
         }
-      });
+      }
 
       animationRef.current = requestAnimationFrame(animate);
     };
@@ -133,20 +129,29 @@ export function ParticleBackground() {
     animate();
 
     return () => {
-      window.removeEventListener('resize', resize);
-      window.removeEventListener('mousemove', handleMouseMove);
-      if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current);
-      }
+      window.removeEventListener('resize', handleResize);
+      cancelAnimationFrame(animationRef.current);
+      clearTimeout(resizeTimeout);
     };
   }, []);
+
+  if (!isVisible) {
+    // Return a static gradient background for mobile/reduced motion
+    return (
+      <div 
+        className="fixed inset-0 pointer-events-none z-0"
+        style={{
+          background: 'radial-gradient(ellipse at 20% 20%, rgba(139, 92, 246, 0.08) 0%, transparent 50%), radial-gradient(ellipse at 80% 80%, rgba(6, 182, 212, 0.05) 0%, transparent 50%)',
+        }}
+      />
+    );
+  }
 
   return (
     <canvas
       ref={canvasRef}
       className="fixed inset-0 pointer-events-none z-0"
       style={{ opacity: 0.6 }}
-      aria-hidden="true"
     />
   );
 }
