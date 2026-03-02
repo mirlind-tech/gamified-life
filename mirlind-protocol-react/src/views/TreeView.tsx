@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { X, Check } from 'lucide-react';
 import { EMOJIS } from '../utils/emojis';
 import {
   getUserSkills,
   startSkill,
   completeStage,
+  abandonSkill,
   getCategoryColor,
   getCategoryIcon,
   getDifficultyStars,
@@ -30,7 +32,7 @@ export function TreeView() {
 
   const filteredSkills = skills.filter(skill => {
     if (activeCategory !== 'all' && skill.category !== activeCategory) return false;
-    if (filter === 'in-progress' && !skill.started) return false;
+    if (filter === 'in-progress' && (!skill.started || skill.completed)) return false;
     if (filter === 'completed' && !skill.completed) return false;
     return true;
   });
@@ -38,6 +40,7 @@ export function TreeView() {
   const handleStartSkill = (skillId: string) => {
     startSkill(skillId);
     setSkills(getUserSkills());
+    setSelectedSkill(null); // Close modal after starting
   };
 
   const handleCompleteStage = (skillId: string, stageIndex: number) => {
@@ -47,6 +50,14 @@ export function TreeView() {
     if (selectedSkill?.id === skillId) {
       const updated = getUserSkills().find(s => s.id === skillId);
       if (updated) setSelectedSkill(updated);
+    }
+  };
+
+  const handleAbandonSkill = (skillId: string) => {
+    if (confirm('Are you sure you want to abandon this skill? All progress will be lost.')) {
+      abandonSkill(skillId);
+      setSkills(getUserSkills());
+      setSelectedSkill(null);
     }
   };
 
@@ -126,7 +137,7 @@ export function TreeView() {
             onClick={() => setActiveCategory(cat.id)}
             className={`px-4 py-2 rounded-xl font-medium text-sm transition-all ${
               activeCategory === cat.id
-                ? 'bg-accent-purple text-white'
+                ? 'bg-accent-purple-dark text-white'
                 : 'bg-bg-secondary text-text-secondary hover:text-text-primary'
             }`}
           >
@@ -217,7 +228,22 @@ export function TreeView() {
 
             {/* Footer */}
             <div className="flex items-center justify-between">
-              <span className="text-xs">{getDifficultyStars(skill.difficulty)}</span>
+              <div className="flex items-center gap-2">
+                <span className="text-xs">{getDifficultyStars(skill.difficulty)}</span>
+                {/* Quick abandon button for in-progress skills */}
+                {skill.started && !skill.completed && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleAbandonSkill(skill.id);
+                    }}
+                    className="w-7 h-7 flex items-center justify-center bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 rounded-lg text-sm transition-all"
+                    title="Abandon skill"
+                  >
+                    🗑️
+                  </button>
+                )}
+              </div>
               <button
                 onClick={(e) => {
                   e.stopPropagation();
@@ -233,7 +259,7 @@ export function TreeView() {
                     ? 'bg-green-500/20 text-green-500' 
                     : skill.started
                       ? 'bg-accent-orange/20 text-accent-orange'
-                      : 'bg-accent-purple hover:bg-accent-purple/80 text-white'
+                      : 'bg-accent-purple-dark hover:bg-accent-purple-dark/80 text-white'
                   }
                 `}
               >
@@ -252,6 +278,7 @@ export function TreeView() {
             onClose={() => setSelectedSkill(null)}
             onStart={() => handleStartSkill(selectedSkill.id)}
             onCompleteStage={(stageIndex) => handleCompleteStage(selectedSkill.id, stageIndex)}
+            onAbandon={() => handleAbandonSkill(selectedSkill.id)}
           />
         )}
       </AnimatePresence>
@@ -264,15 +291,14 @@ function SkillDetailModal({
   onClose,
   onStart,
   onCompleteStage,
+  onAbandon,
 }: {
   skill: MasterySkill;
   onClose: () => void;
   onStart: () => void;
   onCompleteStage: (index: number) => void;
+  onAbandon: () => void;
 }) {
-  // Track current stage for UI display
-  const currentStageIndex = skill.currentStage;
-
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -286,10 +312,10 @@ function SkillDetailModal({
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.9, opacity: 0 }}
         onClick={(e) => e.stopPropagation()}
-        className="bg-bg-secondary border border-white/10 rounded-2xl w-full max-w-3xl max-h-[90vh] overflow-hidden"
+        className="bg-bg-secondary border border-white/10 rounded-2xl w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col"
       >
         {/* Header */}
-        <div className="p-6 border-b border-white/10">
+        <div className="p-6 border-b border-white/10 shrink-0">
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-4">
               <span className="text-5xl">{skill.icon}</span>
@@ -310,7 +336,7 @@ function SkillDetailModal({
               onClick={onClose}
               className="p-2 hover:bg-white/5 rounded-lg transition-colors"
             >
-              <span className="text-2xl">✕</span>
+              <X className="w-6 h-6" />
             </button>
           </div>
           
@@ -323,7 +349,7 @@ function SkillDetailModal({
         </div>
 
         {/* Stages */}
-        <div className="p-6 overflow-y-auto max-h-[60vh]">
+        <div className="p-6 overflow-y-auto flex-1">
           {!skill.started ? (
             <div className="text-center py-8">
               <p className="text-text-secondary mb-4">
@@ -331,7 +357,7 @@ function SkillDetailModal({
               </p>
               <button
                 onClick={onStart}
-                className="px-8 py-3 bg-accent-purple hover:bg-accent-purple/80 text-white font-bold rounded-xl transition-colors"
+                className="px-8 py-3 bg-accent-purple-dark hover:bg-accent-purple-dark/80 text-white font-bold rounded-xl transition-colors"
               >
                 🚀 Start Learning
               </button>
@@ -365,7 +391,7 @@ function SkillDetailModal({
                           ${isActive ? 'bg-accent-orange text-white' : ''}
                           ${isLocked ? 'bg-white/10 text-text-muted' : ''}
                         `}>
-                          {isCompleted ? '✓' : index + 1}
+                          {isCompleted ? <Check className="w-4 h-4" /> : index + 1}
                         </div>
                         <div>
                           <h3 className="font-bold text-text-primary">{stage.name}</h3>
@@ -376,12 +402,12 @@ function SkillDetailModal({
                       {isActive && !skill.completed && (
                         <button
                           onClick={() => onCompleteStage(index)}
-                          className="px-4 py-2 bg-accent-green hover:bg-accent-green/80 text-white text-sm font-semibold rounded-lg transition-colors"
+                          className="px-4 py-2 bg-accent-green-dark hover:bg-accent-green-dark/80 text-white text-sm font-semibold rounded-lg transition-colors"
                         >
                           ✅ Complete Stage
                         </button>
                       )}
-                      {isCompleted && <span className="text-green-500">✓ Completed</span>}
+                      {isCompleted && <span className="text-green-500 flex items-center gap-1"><Check className="w-4 h-4" /> Completed</span>}
                     </div>
 
                     {/* Stage Description */}
@@ -422,10 +448,33 @@ function SkillDetailModal({
 
         {/* Footer */}
         {skill.completed && (
-          <div className="p-6 border-t border-white/10 bg-green-500/10 text-center">
+          <div className="p-6 border-t border-white/10 bg-green-500/10 text-center shrink-0">
             <span className="text-3xl mb-2 block">🎉</span>
             <h3 className="text-xl font-bold text-green-500">Skill Mastered!</h3>
             <p className="text-text-secondary">You are now dangerously capable.</p>
+          </div>
+        )}
+
+        {/* Abandon Skill Button (for in-progress skills) */}
+        {skill.started && !skill.completed && (
+          <div className="p-6 border-t-2 border-red-500/20 bg-red-500/10 shrink-0">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-red-500/20 flex items-center justify-center text-xl">
+                  🗑️
+                </div>
+                <div>
+                  <h4 className="font-semibold text-text-primary">Want to quit?</h4>
+                  <p className="text-sm text-text-muted">Abandon this skill and reset all progress.</p>
+                </div>
+              </div>
+              <button
+                onClick={onAbandon}
+                className="px-5 py-2.5 bg-red-500 hover:bg-red-600 text-white font-semibold rounded-xl transition-colors flex items-center gap-2 shadow-lg shadow-red-500/25"
+              >
+                <span>Abandon Skill</span>
+              </button>
+            </div>
           </div>
         )}
       </motion.div>

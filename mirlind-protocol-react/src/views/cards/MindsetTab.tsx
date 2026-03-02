@@ -1,4 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
+import { Lock, LockOpen, X } from 'lucide-react';
 import type { MindsetTabProps } from './types';
 
 export function MindsetTab({
@@ -47,7 +48,7 @@ export function MindsetTab({
           {!quizQuestion && (
             <button
               onClick={onStartQuiz}
-              className="px-4 py-2 bg-accent-purple hover:bg-accent-purple/80 text-white rounded-lg transition-colors"
+              className="px-4 py-2 bg-accent-purple-dark hover:bg-accent-purple-dark/80 text-white rounded-lg transition-colors"
             >
               Start Quiz
             </button>
@@ -88,7 +89,7 @@ export function MindsetTab({
                 <p className="text-text-secondary text-sm mt-1">{quizQuestion.explanation}</p>
                 <button
                   onClick={onStartQuiz}
-                  className="mt-3 px-4 py-2 bg-accent-purple text-white rounded-lg text-sm"
+                  className="mt-3 px-4 py-2 bg-accent-purple-dark text-white rounded-lg text-sm"
                 >
                   Next Question
                 </button>
@@ -101,7 +102,7 @@ export function MindsetTab({
       {/* Unlocked Teachings */}
       <div className="mb-8">
         <h3 className="text-lg font-bold text-text-primary mb-4 flex items-center gap-2">
-          <span>🔓</span> Unlocked Principles ({unlocked.length})
+          <LockOpen className="w-5 h-5" /> Unlocked Principles ({unlocked.length})
         </h3>
         <div className="grid gap-3">
           {unlocked.map((teaching, index) => (
@@ -124,7 +125,7 @@ export function MindsetTab({
       {locked.length > 0 && (
         <div>
           <h3 className="text-lg font-bold text-text-primary mb-4 flex items-center gap-2">
-            <span>🔒</span> Locked Principles ({locked.length})
+            <Lock className="w-5 h-5" /> Locked Principles ({locked.length})
           </h3>
           <div className="grid gap-3 opacity-50">
             {locked.slice(0, 3).map((teaching) => (
@@ -162,7 +163,7 @@ export function MindsetTab({
               <div className="flex items-start justify-between mb-4">
                 <h2 className="text-2xl font-bold text-text-primary">{selectedTeaching.principle}</h2>
                 <button onClick={() => setSelectedTeaching(null)} className="p-2 hover:bg-white/5 rounded-lg">
-                  <span className="text-2xl">✕</span>
+                  <X className="w-6 h-6" />
                 </button>
               </div>
 

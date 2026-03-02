@@ -14,6 +14,16 @@ export interface FinanceSummary {
   count: number;
 }
 
+export interface FinanceCap {
+  id: number;
+  user_id: number;
+  month: string;
+  cap_amount: number;
+  reason: string;
+  created_at: string;
+  updated_at: string;
+}
+
 // Get finance entries (optionally filtered by date range)
 export const getFinanceEntries = async (startDate?: string, endDate?: string): Promise<{ entries: FinanceEntry[] }> => {
   const params = new URLSearchParams();
@@ -45,4 +55,20 @@ export const getFinanceSummary = async (startDate?: string, endDate?: string): P
   if (endDate) params.append('endDate', endDate);
   const query = params.toString();
   return apiRequest(`/finance/summary${query ? `?${query}` : ''}`);
+};
+
+export const getFinanceCap = async (month?: string): Promise<{ cap: FinanceCap | null }> => {
+  const query = month ? `?month=${encodeURIComponent(month)}` : '';
+  return apiRequest<{ cap: FinanceCap | null }>(`/finance/caps${query}`);
+};
+
+export const saveFinanceCap = async (
+  month: string,
+  capAmount: number,
+  reason = ''
+): Promise<{ cap: FinanceCap | null }> => {
+  return apiRequest<{ cap: FinanceCap | null }>('/finance/caps', {
+    method: 'PUT',
+    body: JSON.stringify({ month, capAmount, reason }),
+  });
 };

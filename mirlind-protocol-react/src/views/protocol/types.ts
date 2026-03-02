@@ -122,6 +122,9 @@ export interface BodyTrackingTabProps {
 export interface GermanTabProps {
   germanStats: GermanStats;
   setGermanStats: React.Dispatch<React.SetStateAction<GermanStats>>;
+  onSave: () => Promise<void>;
+  isSaving: boolean;
+  streak: number;
 }
 
 export interface CodeTabProps {

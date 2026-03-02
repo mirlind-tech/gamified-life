@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
 import { GameProvider } from './store/GameContext';
 import { useGame } from './store/useGame';
 import { Header } from './components/Header';
@@ -6,12 +6,14 @@ import { Sidebar } from './components/Sidebar';
 import { MainContent } from './components/MainContent';
 import { ToastContainer } from './components/ToastContainer';
 import { Confetti } from './components/Confetti';
-import { ParticleBackground } from './components/ParticleBackground';
+import { CyberpunkBackground } from './components/CyberpunkBackground';
 import { KeyboardShortcutsHelp } from './components/KeyboardShortcutsHelp';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { usePWA } from './hooks/usePWA';
 import { EMOJIS } from './utils/emojis';
 import { motion, AnimatePresence } from 'framer-motion';
+import { syncOfflineQueue } from './services/authApi';
+import { trackEvent } from './utils/telemetry';
 
 // Loading Screen
 function LoadingScreen() {
@@ -50,6 +52,31 @@ function AppContent() {
     undefined // No need for external close handler
   );
 
+  useEffect(() => {
+    const handleOnline = () => {
+      syncOfflineQueue().catch(() => undefined);
+    };
+
+    window.addEventListener('online', handleOnline);
+    if (navigator.onLine) {
+      syncOfflineQueue().catch(() => undefined);
+    }
+
+    return () => window.removeEventListener('online', handleOnline);
+  }, []);
+
+  useEffect(() => {
+    void trackEvent('app_loaded', {
+      path: window.location.pathname,
+    });
+  }, []);
+
+  useEffect(() => {
+    void trackEvent('view_changed', {
+      view: state.currentView,
+    });
+  }, [state.currentView]);
+
   // Show loading screen while initializing
   if (state.isLoading) {
     return <LoadingScreen />;
@@ -85,7 +112,7 @@ function AppContent() {
             </span>
             <button
               onClick={install}
-              className="px-3 py-1 bg-accent-purple hover:bg-accent-purple/80 text-white text-sm font-medium rounded-lg transition-colors"
+              className="px-3 py-1 bg-accent-purple-dark hover:bg-accent-purple-dark/80 text-white text-sm font-medium rounded-lg transition-colors"
             >
               Install
             </button>
@@ -100,7 +127,7 @@ function AppContent() {
         <MainContent />
       </div>
       
-      <ParticleBackground />
+      <CyberpunkBackground />
       <ToastContainer />
       <Confetti />
       

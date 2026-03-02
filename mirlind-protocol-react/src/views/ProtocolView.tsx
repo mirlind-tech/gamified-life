@@ -8,12 +8,14 @@ import * as financeApi from '../services/financeApi';
 import * as protocolApi from '../services/protocolApi';
 import * as playerApi from '../services/playerApi';
 import { useGame } from '../store/useGame';
+import { useAuth } from '../contexts/useAuth';
 import { useToast } from '../hooks/useToast';
 import { ToastContainer } from '../components/Toast';
 import { LevelUpModal } from '../components/LevelUpModal';
 import type { Achievement } from '../components/AchievementBadge';
 import type { Workout } from '../services/bodyApi';
 import { logger } from '../utils/logger';
+import { getDatedKey, loadJson, saveJson } from '../utils/storage';
 
 // Import extracted tab components
 import {
@@ -41,21 +43,39 @@ const STORAGE_KEYS = {
   german: 'mirlind-protocol-german',
   code: 'mirlind-protocol-code',
   finance: 'mirlind-protocol-finance',
+  achievements: 'mirlind-protocol-achievements',
 };
 
 const TABS: { id: TabType; label: string; icon: string }[] = [
   { id: 'daily', label: 'Daily', icon: EMOJIS.CHECK },
+  { id: 'code', label: 'Job Ready', icon: EMOJIS.CODE },
+  { id: 'finance', label: 'Finance', icon: EMOJIS.CAPITAL },
   { id: 'body', label: 'Body', icon: EMOJIS.VESSEL },
   { id: 'german', label: 'German', icon: EMOJIS.FLAG },
-  { id: 'code', label: 'Code', icon: EMOJIS.CODE },
-  { id: 'finance', label: 'Finance', icon: EMOJIS.CAPITAL },
   { id: 'weekly', label: 'Weekly Review', icon: '📊' },
 ];
 
-export function ProtocolView() {
-  const { addXP: addXPToGame } = useGame();
+interface ProtocolViewProps {
+  initialTab?: TabType;
+  lockedTab?: boolean;
+  headerTitle?: string;
+  headerHint?: string;
+}
+
+export function ProtocolView({
+  initialTab = 'daily',
+  lockedTab = false,
+  headerTitle,
+  headerHint,
+}: ProtocolViewProps) {
+  const { addXP: addXPToGame, setView } = useGame();
+  const { isAuthenticated } = useAuth();
   const today = new Date().toISOString().split('T')[0];
-  const [activeTab, setActiveTab] = useState<TabType>('daily');
+  const [activeTab, setActiveTab] = useState<TabType>(initialTab);
+
+  useEffect(() => {
+    setActiveTab(initialTab);
+  }, [initialTab]);
 
   // Daily Protocol State
   const [protocol, setProtocol] = useState<DailyProtocol>({
@@ -104,7 +124,7 @@ export function ProtocolView() {
     date: today,
     hours: 0,
     githubCommits: 0,
-    project: 'Protocol Tracker',
+    project: 'Portfolio Job-Switch Project',
     skills: [],
     notes: '',
   });
@@ -133,22 +153,74 @@ export function ProtocolView() {
   // Loading states
   const [isSavingWorkout, setIsSavingWorkout] = useState(false);
   const [isSavingMeasurements, setIsSavingMeasurements] = useState(false);
+  const [isSavingGerman, setIsSavingGerman] = useState(false);
 
-  // Achievements
-  const [achievements, setAchievements] = useState<Achievement[]>([
-    { id: 'first-workout', name: 'First Blood', description: 'Complete your first workout', icon: '💪', rarity: 'common' },
-    { id: '7-day-streak', name: 'Week Warrior', description: '7 day protocol streak', icon: '🔥', rarity: 'rare' },
-    { id: '30-day-streak', name: 'Monthly Master', description: '30 day protocol streak', icon: '⚡', rarity: 'epic' },
-    { id: '1000-words', name: 'Polyglot', description: 'Learn 1000 German words', icon: '📚', rarity: 'rare' },
-    { id: 'baki-arms', name: 'Baki Arms', description: 'Biceps reach 30cm', icon: '🦾', rarity: 'epic' },
-    { id: 'code-ninja', name: 'Code Ninja', description: 'Complete 50 coding sessions', icon: '👨‍💻', rarity: 'epic' },
-    { id: 'early-bird', name: 'Early Bird', description: 'Wake up at 5am 10 times', icon: '🌅', rarity: 'common' },
-    { id: 'german-master', name: 'German Master', description: 'Complete Language Transfer course', icon: '🇩🇪', rarity: 'legendary' },
-  ]);
+  // Achievements - load from localStorage or use initial state
+  const [achievements, setAchievements] = useState<Achievement[]>(() => {
+    const saved = loadJson<Achievement[] | null>(STORAGE_KEYS.achievements, null);
+    if (saved) return saved;
+    return [
+      { id: 'first-workout', name: 'First Blood', description: 'Complete your first workout', icon: '💪', rarity: 'common' },
+      { id: '7-day-streak', name: 'Week Warrior', description: '7 day protocol streak', icon: '🔥', rarity: 'rare' },
+      { id: '30-day-streak', name: 'Monthly Master', description: '30 day protocol streak', icon: '⚡', rarity: 'epic' },
+      { id: '1000-words', name: 'Polyglot', description: 'Learn 1000 German words', icon: '📚', rarity: 'rare' },
+      { id: 'baki-arms', name: 'Baki Arms', description: 'Biceps reach 30cm', icon: '🦾', rarity: 'epic' },
+      { id: 'code-ninja', name: 'Code Ninja', description: 'Complete 50 coding sessions', icon: '👨‍💻', rarity: 'epic' },
+      { id: 'early-bird', name: 'Early Bird', description: 'Wake up at 5am 10 times', icon: '🌅', rarity: 'common' },
+      { id: 'german-master', name: 'German Master', description: 'Complete Language Transfer course', icon: '🇩🇪', rarity: 'legendary' },
+    ];
+  });
   const [newUnlocks, setNewUnlocks] = useState<string[]>([]);
 
   // Protocol history for heatmap (last 90 days)
   const [protocolHistory, setProtocolHistory] = useState<ProtocolHistoryEntry[]>([]);
+
+  // Calculate German streak based on consecutive days of activity
+  const calculateGermanStreak = useCallback(() => {
+    let streak = 0;
+    const checkDate = new Date();
+    
+    // Check today first - if no activity, check if yesterday had activity
+    const todayStr = checkDate.toISOString().split('T')[0];
+    const todaySaved = loadJson<Record<string, unknown> | null>(getDatedKey(STORAGE_KEYS.german, todayStr), null);
+    
+    if (!todaySaved) {
+      // No activity today, check yesterday to maintain streak
+      checkDate.setDate(checkDate.getDate() - 1);
+    }
+    
+    while (true) {
+      const dateStr = checkDate.toISOString().split('T')[0];
+      const data = loadJson<{ ankiCards?: number; languageTransfer?: boolean } | null>(
+        getDatedKey(STORAGE_KEYS.german, dateStr),
+        null
+      );
+      
+      if (!data) break;
+
+      // Count as activity if they did Anki cards OR Language Transfer
+      if ((data.ankiCards ?? 0) > 0 || data.languageTransfer) {
+        streak++;
+        checkDate.setDate(checkDate.getDate() - 1);
+      } else {
+        break;
+      }
+    }
+    
+    return streak;
+  }, []);
+
+  const [germanStreak, setGermanStreak] = useState(0);
+  
+  // Update German streak whenever germanStats changes
+  useEffect(() => {
+    const streak = calculateGermanStreak();
+    setGermanStreak(streak);
+    // Also update the stats object for backend sync
+    if (streak !== germanStats.ankiStreak) {
+      setGermanStats(prev => ({ ...prev, ankiStreak: streak }));
+    }
+  }, [germanStats.date, germanStats.ankiCards, germanStats.languageTransfer, germanStats.ankiStreak, calculateGermanStreak]);
 
   // Achievement unlock helper
   const unlockAchievement = useCallback((id: string) => {
@@ -164,6 +236,11 @@ export function ProtocolView() {
     });
   }, [success]);
 
+  // Persist achievements to localStorage
+  useEffect(() => {
+    saveJson(STORAGE_KEYS.achievements, achievements);
+  }, [achievements]);
+
   // Helper functions
   const calculateStreak = useCallback(() => {
     let currentStreak = 0;
@@ -171,12 +248,16 @@ export function ProtocolView() {
 
     while (true) {
       const dateStr = checkDate.toISOString().split('T')[0];
-      const saved = localStorage.getItem(`${STORAGE_KEYS.daily}-${dateStr}`);
+      const data = loadJson<{
+        wake05?: boolean;
+        germanStudy?: boolean;
+        gymWorkout?: boolean;
+        sleep22?: boolean;
+        codingHours?: number;
+      } | null>(getDatedKey(STORAGE_KEYS.daily, dateStr), null);
 
-      if (!saved) break;
-
-      const data = JSON.parse(saved);
-      const completed = data.wake05 && data.germanStudy && data.gymWorkout && data.sleep22 && data.codingHours >= 2;
+      if (!data) break;
+      const completed = data.wake05 && data.germanStudy && data.gymWorkout && data.sleep22 && (data.codingHours ?? 0) >= 2;
 
       if (completed) {
         currentStreak++;
@@ -197,15 +278,20 @@ export function ProtocolView() {
       const checkDate = new Date(today);
       checkDate.setDate(checkDate.getDate() - i);
       const dateStr = checkDate.toISOString().split('T')[0];
-      const saved = localStorage.getItem(`${STORAGE_KEYS.daily}-${dateStr}`);
+      const data = loadJson<{
+        wake05?: boolean;
+        germanStudy?: boolean;
+        gymWorkout?: boolean;
+        sleep22?: boolean;
+        codingHours?: number;
+      } | null>(getDatedKey(STORAGE_KEYS.daily, dateStr), null);
 
-      if (saved) {
-        const data = JSON.parse(saved);
+      if (data) {
         let dayScore = 0;
         if (data.wake05) dayScore += 20;
         if (data.germanStudy) dayScore += 20;
         if (data.gymWorkout) dayScore += 20;
-        if (data.codingHours >= 2) dayScore += 20;
+        if ((data.codingHours ?? 0) >= 2) dayScore += 20;
         if (data.sleep22) dayScore += 20;
         totalScore += dayScore;
       }
@@ -226,6 +312,8 @@ export function ProtocolView() {
 
   // Load data
   useEffect(() => {
+    if (!isAuthenticated) return; // Wait for auth
+    
     requestAnimationFrame(() => {
       // Load daily protocol from backend
       protocolApi.getProtocol(today)
@@ -244,8 +332,8 @@ export function ProtocolView() {
         .catch(err => logger.error('Failed to load protocol:', err));
 
       // Load body from localStorage (measurements saved manually)
-      const savedBody = localStorage.getItem(`${STORAGE_KEYS.body}-${today}`);
-      if (savedBody) setBodyStats(JSON.parse(savedBody));
+      const savedBody = loadJson<BodyStats | null>(getDatedKey(STORAGE_KEYS.body, today), null);
+      if (savedBody) setBodyStats(savedBody);
 
       // Load german from backend
       germanApi.getGermanProgress(today)
@@ -273,9 +361,8 @@ export function ProtocolView() {
             ...prev,
             date: progress.date || today,
             hours: progress.hours ?? prev.hours,
-            githubCommits: progress.github_commits ?? prev.githubCommits,
+            githubCommits: progress.commits ?? prev.githubCommits,
             project: progress.project ?? prev.project,
-            skills: progress.skills ?? prev.skills,
             notes: progress.notes ?? prev.notes,
           }));
         })
@@ -308,27 +395,39 @@ export function ProtocolView() {
 
       // Build protocol history for heatmap (last 90 days from localStorage)
       const history: ProtocolHistoryEntry[] = [];
-      for (let i = 0; i < 90; i++) {
+      for (let i = 89; i >= 0; i--) {
         const d = new Date();
         d.setDate(d.getDate() - i);
         const dateStr = d.toISOString().split('T')[0];
-        const saved = localStorage.getItem(`${STORAGE_KEYS.daily}-${dateStr}`);
-        if (saved) {
-          const data = JSON.parse(saved);
+        const data = loadJson<{
+          wake05?: boolean;
+          germanStudy?: boolean;
+          gymWorkout?: boolean;
+          sleep22?: boolean;
+          codingHours?: number;
+        } | null>(getDatedKey(STORAGE_KEYS.daily, dateStr), null);
+        if (data) {
           let completed = 0;
           if (data.wake05) completed++;
           if (data.germanStudy) completed++;
           if (data.gymWorkout) completed++;
-          if (data.codingHours >= 2) completed++;
+          if ((data.codingHours ?? 0) >= 2) completed++;
           if (data.sleep22) completed++;
           history.push({
             date: dateStr,
             completed: completed === 5,
             percentage: (completed / 5) * 100,
           });
+        } else {
+          // Include days without data as 0% complete
+          history.push({
+            date: dateStr,
+            completed: false,
+            percentage: 0,
+          });
         }
       }
-      setProtocolHistory(history.reverse());
+      setProtocolHistory(history);
 
       // Load streak from backend
       protocolApi.getProtocolStreak()
@@ -337,14 +436,16 @@ export function ProtocolView() {
 
       calculateWeeklyScore();
     });
-  }, [today, unlockAchievement, calculateStreak, calculateWeeklyScore]);
+  }, [today, unlockAchievement, calculateStreak, calculateWeeklyScore, isAuthenticated]);
 
   // Save data effects
   useEffect(() => {
-    localStorage.setItem(`${STORAGE_KEYS.daily}-${today}`, JSON.stringify(protocol));
+    saveJson(getDatedKey(STORAGE_KEYS.daily, today), protocol);
   }, [protocol, today]);
 
   useEffect(() => {
+    if (!isAuthenticated) return;
+    
     const timeoutId = setTimeout(() => {
       protocolApi.saveProtocol({
         date: protocol.date,
@@ -358,17 +459,19 @@ export function ProtocolView() {
     }, 500);
 
     return () => clearTimeout(timeoutId);
-  }, [protocol]);
+  }, [protocol, isAuthenticated]);
 
   useEffect(() => {
-    localStorage.setItem(`${STORAGE_KEYS.body}-${today}`, JSON.stringify(bodyStats));
+    saveJson(getDatedKey(STORAGE_KEYS.body, today), bodyStats);
   }, [bodyStats, today]);
 
   useEffect(() => {
-    localStorage.setItem(`${STORAGE_KEYS.german}-${today}`, JSON.stringify(germanStats));
+    saveJson(getDatedKey(STORAGE_KEYS.german, today), germanStats);
   }, [germanStats, today]);
 
   useEffect(() => {
+    if (!isAuthenticated) return;
+    
     const timeoutId = setTimeout(() => {
       germanApi.saveGermanProgress({
         date: germanStats.date,
@@ -385,26 +488,27 @@ export function ProtocolView() {
     }, 500);
 
     return () => clearTimeout(timeoutId);
-  }, [germanStats]);
+  }, [germanStats, isAuthenticated]);
 
   useEffect(() => {
-    localStorage.setItem(`${STORAGE_KEYS.code}-${today}`, JSON.stringify(codeStats));
+    saveJson(getDatedKey(STORAGE_KEYS.code, today), codeStats);
   }, [codeStats, today]);
 
   useEffect(() => {
+    if (!isAuthenticated) return;
+    
     const timeoutId = setTimeout(() => {
       codeApi.saveCodeProgress({
         date: codeStats.date,
         hours: codeStats.hours,
-        github_commits: codeStats.githubCommits,
+        commits: codeStats.githubCommits,
         project: codeStats.project,
-        skills: codeStats.skills,
         notes: codeStats.notes,
       }).catch(err => logger.error('Failed to save code progress:', err));
     }, 500);
 
     return () => clearTimeout(timeoutId);
-  }, [codeStats]);
+  }, [codeStats, isAuthenticated]);
 
   // Action handlers
   const toggleTask = (task: keyof DailyProtocol) => {
@@ -415,7 +519,7 @@ export function ProtocolView() {
       if (newValue) {
         const xpMap: Record<string, { amount: number; type: string; skillId?: string; message: string }> = {
           wake05: { amount: 10, type: 'principle', message: 'Early rise!' },
-          germanStudy: { amount: 25, type: 'tongue', skillId: 'germanA1', message: 'German progress!' },
+          germanStudy: { amount: 15, type: 'tongue', skillId: 'germanA1', message: 'German minimum done.' },
           gymWorkout: { amount: 30, type: 'vessel', skillId: 'strength', message: 'Workout complete!' },
           sleep22: { amount: 10, type: 'principle', message: 'Discipline!' },
         };
@@ -424,13 +528,15 @@ export function ProtocolView() {
         if (xpReward) {
           xp(xpReward.amount, xpReward.message);
           addXPToGame(xpReward.amount, xpReward.type);
-          playerApi.addXP(xpReward.amount, xpReward.type, xpReward.skillId)
-            .then(response => {
-              if (response.levelUp) {
-                setLevelUpModal({ isOpen: true, newLevel: response.newLevel, pillar: xpReward.type });
-              }
-            })
-            .catch(err => logger.error('Failed to award XP:', err));
+          if (isAuthenticated) {
+            playerApi.addXP(xpReward.amount, xpReward.type, xpReward.skillId)
+              .then(response => {
+                if (response.levelUp) {
+                  setLevelUpModal({ isOpen: true, newLevel: response.newLevel, pillar: xpReward.type });
+                }
+              })
+              .catch(err => logger.error('Failed to award XP:', err));
+          }
         }
       }
     }
@@ -444,19 +550,25 @@ export function ProtocolView() {
     setProtocol(prev => ({ ...prev, codingHours: newHours }));
     
     if (!wasCompleted && isNowCompleted) {
-      xp(25, 'Deep work complete!');
-      addXPToGame(25, 'craft');
-      playerApi.addXP(25, 'craft', 'javascript')
-        .then(response => {
-          if (response.levelUp) {
-            setLevelUpModal({ isOpen: true, newLevel: response.newLevel, pillar: 'craft' });
-          }
-        })
-        .catch(err => logger.error('Failed to award XP:', err));
+      xp(35, 'Job-ready deep work complete!');
+      addXPToGame(35, 'craft');
+      if (isAuthenticated) {
+        playerApi.addXP(35, 'craft', 'javascript')
+          .then(response => {
+            if (response.levelUp) {
+              setLevelUpModal({ isOpen: true, newLevel: response.newLevel, pillar: 'craft' });
+            }
+          })
+          .catch(err => logger.error('Failed to award XP:', err));
+      }
     }
   };
 
   const addExpense = async () => {
+    if (!isAuthenticated) {
+      error('Please log in to add expenses');
+      return;
+    }
     if (!newExpense.amount || isNaN(Number(newExpense.amount))) return;
 
     try {
@@ -490,9 +602,10 @@ export function ProtocolView() {
       };
       const updated = [...financeEntries, entry];
       setFinanceEntries(updated);
-      localStorage.setItem(`${STORAGE_KEYS.finance}-${today}`, JSON.stringify(
+      saveJson(
+        getDatedKey(STORAGE_KEYS.finance, today),
         updated.filter(e => e.date === today)
-      ));
+      );
       setNewExpense({ amount: '', category: 'food', description: '' });
       success('Expense saved locally');
     }
@@ -513,6 +626,10 @@ export function ProtocolView() {
   };
 
   const saveMeasurements = async () => {
+    if (!isAuthenticated) {
+      error('Please log in to save measurements');
+      return;
+    }
     setIsSavingMeasurements(true);
     try {
       await bodyApi.addMeasurement({
@@ -539,6 +656,10 @@ export function ProtocolView() {
   };
 
   const saveWorkout = async () => {
+    if (!isAuthenticated) {
+      error('Please log in to save workouts');
+      return;
+    }
     if (!bodyStats.workout || bodyStats.workout.exercises.length === 0) {
       error('No workout to save. Select a preset or add exercises.');
       return;
@@ -559,8 +680,12 @@ export function ProtocolView() {
       });
       
       addXPToGame(30, 'vessel');
-      const response = await playerApi.addXP(30, 'vessel', 'strength');
       xp(30, 'Workout crushed!');
+      
+      let levelUpResponse = null;
+      if (isAuthenticated) {
+        levelUpResponse = await playerApi.addXP(30, 'vessel', 'strength');
+      }
       
       const { workouts } = await bodyApi.getWorkouts();
       setWorkoutHistory(workouts);
@@ -571,8 +696,8 @@ export function ProtocolView() {
       
       success('Workout saved!');
       
-      if (response.levelUp) {
-        setLevelUpModal({ isOpen: true, newLevel: response.newLevel, pillar: 'vessel' });
+      if (levelUpResponse?.levelUp) {
+        setLevelUpModal({ isOpen: true, newLevel: levelUpResponse.newLevel, pillar: 'vessel' });
       }
     } catch (e) {
       logger.error('Failed to save workout:', e);
@@ -591,10 +716,52 @@ export function ProtocolView() {
         className="text-center"
       >
         <h2 className="text-3xl font-bold text-gradient mb-2">
-          {EMOJIS.CROWN} PROTOCOL TRACKER
+          {headerTitle || `${EMOJIS.CROWN} PROTOCOL TRACKER`}
         </h2>
         <p className="text-text-secondary">{new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+        {headerHint ? (
+          <p className="text-xs text-text-muted mt-1">{headerHint}</p>
+        ) : (
+          <>
+            <p className="text-xs text-text-muted mt-1">Priority: Job Ready - Finance - Coding Depth - Body - German</p>
+            <p className="text-xs text-text-muted">Work block 06:50-16:30 | App use under 10 minutes</p>
+          </>
+        )}
+        <button
+          onClick={async () => {
+            try {
+              await protocolApi.deleteProtocol(today);
+              setProtocol({
+                date: today,
+                wake05: false,
+                germanStudy: false,
+                gymWorkout: false,
+                codingHours: 0,
+                sleep22: false,
+                notes: '',
+              });
+              success('Daily progress reset!');
+            } catch {
+              error('Failed to reset progress');
+            }
+          }}
+          className="mt-3 px-4 py-2 bg-red-500/20 hover:bg-red-500/30 border border-red-500/50 rounded-lg text-sm font-medium text-red-400 hover:text-red-300 transition-all duration-200 flex items-center gap-2 mx-auto"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 12"/><path d="M3 3v9h9"/></svg>
+          Reset Today
+        </button>
       </motion.div>
+
+      {lockedTab && (
+        <div className="flex justify-center">
+          <button
+            onClick={() => setView('command')}
+            className="px-4 py-2 rounded-lg border border-border bg-bg-secondary/50 hover:bg-bg-hover text-sm text-text-secondary hover:text-text-primary transition-colors"
+          >
+            Open Full Command Center
+          </button>
+        </div>
+      )}
 
       {/* Stats Row */}
       <div className="grid grid-cols-3 gap-4">
@@ -632,22 +799,24 @@ export function ProtocolView() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-2 overflow-x-auto pb-2">
-        {TABS.map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl font-semibold transition-all whitespace-nowrap ${
-              activeTab === tab.id
-                ? 'bg-accent-purple text-white'
-                : 'glass-card text-text-secondary hover:bg-bg-hover'
-            }`}
-          >
-            <span>{tab.icon}</span>
-            <span>{tab.label}</span>
-          </button>
-        ))}
-      </div>
+      {!lockedTab && (
+        <div className="flex gap-2 overflow-x-auto pb-2">
+          {TABS.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl font-semibold transition-all whitespace-nowrap ${
+                activeTab === tab.id
+                  ? 'bg-accent-purple-dark text-white'
+                  : 'glass-card text-text-secondary hover:bg-bg-hover'
+              }`}
+            >
+              <span>{tab.icon}</span>
+              <span>{tab.label}</span>
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Tab Content */}
       <AnimatePresence mode="wait">
@@ -683,6 +852,33 @@ export function ProtocolView() {
             key="german"
             germanStats={germanStats}
             setGermanStats={setGermanStats}
+            streak={germanStreak}
+            onSave={async () => {
+              setIsSavingGerman(true);
+              try {
+                if (isAuthenticated) {
+                  await germanApi.saveGermanProgress({
+                    date: germanStats.date,
+                    anki_cards: germanStats.ankiCards,
+                    anki_time: germanStats.ankiTime,
+                    anki_streak: germanStreak,
+                    total_words: germanStats.totalWords,
+                    language_transfer: germanStats.languageTransfer,
+                    language_transfer_lesson: germanStats.languageTransferLesson,
+                    radio_hours: germanStats.radioHours,
+                    tandem_minutes: germanStats.tandemMinutes,
+                    notes: germanStats.notes,
+                  });
+                }
+                saveJson(getDatedKey(STORAGE_KEYS.german, today), germanStats);
+                success('German progress saved!');
+              } catch {
+                error('Failed to save German progress');
+              } finally {
+                setIsSavingGerman(false);
+              }
+            }}
+            isSaving={isSavingGerman}
           />
         )}
 
@@ -728,3 +924,5 @@ export function ProtocolView() {
     </div>
   );
 }
+
+

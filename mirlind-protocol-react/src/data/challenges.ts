@@ -520,20 +520,4 @@ export function completeSpecialChallengeDay(challengeId: string, dayIndex: numbe
   };
 }
 
-// Get weekly stats
-export function getWeeklyStats(): { completed: number; totalXP: number } {
-  const progress = JSON.parse(localStorage.getItem('mirlind-challenges-progress') || '{}');
-  const weeklyHistory = progress.weeklyHistory || {};
-  const currentWeek = getWeekNumber(new Date());
-  
-  return weeklyHistory[currentWeek] || { completed: 0, totalXP: 0 };
-}
 
-// Helper function to get week number
-function getWeekNumber(date: Date): string {
-  const start = new Date(date.getFullYear(), 0, 1);
-  const diff = date.getTime() - start.getTime();
-  const oneWeek = 1000 * 60 * 60 * 24 * 7;
-  const weekNum = Math.floor(diff / oneWeek);
-  return `${date.getFullYear()}-W${weekNum}`;
-}

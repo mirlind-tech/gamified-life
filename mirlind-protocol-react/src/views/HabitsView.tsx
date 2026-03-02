@@ -73,7 +73,7 @@ export function HabitsView() {
             <p className="text-text-secondary">Build atomic habits with streaks</p>
           </div>
           <motion.button 
-            className="px-4 py-2 bg-accent-purple hover:bg-accent-purple/80 text-white font-semibold rounded-lg transition-colors flex items-center gap-2"
+            className="px-4 py-2 bg-accent-purple-dark hover:bg-accent-purple-dark/80 text-white font-semibold rounded-lg transition-colors flex items-center gap-2"
             onClick={() => setShowAddModal(true)}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
@@ -273,9 +273,10 @@ function AddHabitModal({ isOpen, onClose, onAdd }: AddHabitModalProps) {
         <h3 className="text-xl font-bold text-text-primary mb-6">{EMOJIS.PLUS} Add New Habit</h3>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-semibold text-text-secondary mb-2">Name</label>
+            <label id="habit-name-label" className="block text-sm font-semibold text-text-secondary mb-2">Name</label>
             <input 
               type="text" 
+              aria-labelledby="habit-name-label"
               value={name}
               onChange={e => setName(e.target.value)}
               placeholder="e.g., Read 30 minutes"
@@ -285,9 +286,10 @@ function AddHabitModal({ isOpen, onClose, onAdd }: AddHabitModalProps) {
           </div>
           
           <div>
-            <label className="block text-sm font-semibold text-text-secondary mb-2">Description</label>
+            <label id="habit-description-label" className="block text-sm font-semibold text-text-secondary mb-2">Description</label>
             <input 
               type="text" 
+              aria-labelledby="habit-description-label"
               value={description}
               onChange={e => setDescription(e.target.value)}
               placeholder="Brief description"
@@ -296,8 +298,9 @@ function AddHabitModal({ isOpen, onClose, onAdd }: AddHabitModalProps) {
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-text-secondary mb-2">Category</label>
+            <label id="habit-category-label" className="block text-sm font-semibold text-text-secondary mb-2">Category</label>
             <select 
+              aria-labelledby="habit-category-label"
               value={category} 
               onChange={e => setCategory(e.target.value as PillarType | 'general')}
               className="w-full px-4 py-2.5 bg-black/30 border border-border rounded-lg text-text-primary focus:border-accent-purple focus:outline-none transition-colors"
@@ -309,9 +312,10 @@ function AddHabitModal({ isOpen, onClose, onAdd }: AddHabitModalProps) {
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-text-secondary mb-2">XP Reward</label>
+            <label id="habit-xp-label" className="block text-sm font-semibold text-text-secondary mb-2">XP Reward</label>
             <input 
               type="number" 
+              aria-labelledby="habit-xp-label"
               value={xpReward}
               onChange={e => setXpReward(Number(e.target.value))}
               min={5}
@@ -321,8 +325,8 @@ function AddHabitModal({ isOpen, onClose, onAdd }: AddHabitModalProps) {
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-text-secondary mb-2">Icon</label>
-            <div className="flex flex-wrap gap-2">
+            <label id="habit-icon-label" className="block text-sm font-semibold text-text-secondary mb-2">Icon</label>
+            <div role="group" aria-labelledby="habit-icon-label" className="flex flex-wrap gap-2">
               {icons.map(icon => (
                 <motion.button
                   key={icon.emoji}
@@ -356,7 +360,7 @@ function AddHabitModal({ isOpen, onClose, onAdd }: AddHabitModalProps) {
             </motion.button>
             <motion.button 
               type="submit"
-              className="flex-1 px-4 py-2.5 bg-accent-purple hover:bg-accent-purple/80 text-white font-semibold rounded-lg transition-colors"
+              className="flex-1 px-4 py-2.5 bg-accent-purple-dark hover:bg-accent-purple-dark/80 text-white font-semibold rounded-lg transition-colors"
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
             >

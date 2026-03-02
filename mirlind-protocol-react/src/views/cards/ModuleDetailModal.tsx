@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Check, X } from 'lucide-react';
 import { type Module, type Topic } from '../../data/roadmap';
 
 interface ModuleDetailModalProps {
@@ -22,9 +23,8 @@ function TopicItem({
 
   return (
     <div className={`border rounded-xl overflow-hidden transition-all ${isCompleted ? 'border-green-500/30' : 'border-white/10'}`}>
-      <button
-        onClick={() => setExpanded(!expanded)}
-        className="w-full p-4 flex items-center justify-between hover:bg-white/5 transition-colors"
+      <div
+        className="w-full p-4 flex items-center justify-between hover:bg-white/5 transition-colors cursor-pointer"
       >
         <div className="flex items-center gap-3">
           <button
@@ -32,19 +32,29 @@ function TopicItem({
               e.stopPropagation();
               onToggle();
             }}
+            aria-label={isCompleted ? 'Mark topic incomplete' : 'Mark topic complete'}
             className={`
               w-6 h-6 rounded border-2 flex items-center justify-center transition-colors
               ${isCompleted ? 'bg-green-500 border-green-500' : 'border-white/30 hover:border-accent-cyan'}
             `}
           >
-            {isCompleted && <span className="text-white text-sm">✓</span>}
+            {isCompleted && <Check className="w-4 h-4 text-white" />}
           </button>
-          <span className={`font-medium ${isCompleted ? 'text-green-500 line-through' : 'text-text-primary'}`}>
+          <span 
+            onClick={() => setExpanded(!expanded)}
+            className={`font-medium flex-1 cursor-pointer ${isCompleted ? 'text-green-500 line-through' : 'text-text-primary'}`}
+          >
             {topic.name}
           </span>
         </div>
-        <span className="text-text-muted">{expanded ? '▲' : '▼'}</span>
-      </button>
+        <button 
+          onClick={() => setExpanded(!expanded)}
+          aria-label={expanded ? 'Collapse topic details' : 'Expand topic details'}
+          className="text-text-muted hover:text-text-primary transition-colors"
+        >
+          {expanded ? '▲' : '▼'}
+        </button>
+      </div>
 
       <AnimatePresence>
         {expanded && (
@@ -58,7 +68,7 @@ function TopicItem({
               <p className="text-text-secondary text-sm mb-3">{topic.description}</p>
               
               <div className="space-y-2">
-                <h5 className="text-xs font-semibold text-accent-cyan">Key Concepts:</h5>
+                <div className="text-xs font-semibold text-accent-cyan">Key Concepts:</div>
                 <ul className="text-sm text-text-secondary space-y-1">
                   {topic.concepts.map((concept, i) => (
                     <li key={i} className="flex items-center gap-2">
@@ -115,7 +125,7 @@ export function ModuleDetailModal({
               </div>
             </div>
             <button onClick={onClose} className="p-2 hover:bg-white/5 rounded-lg">
-              <span className="text-2xl">✕</span>
+              <X className="w-6 h-6" />
             </button>
           </div>
           <p className="text-text-secondary mt-4">{module.description}</p>

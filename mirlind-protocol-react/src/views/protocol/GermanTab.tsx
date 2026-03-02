@@ -1,53 +1,29 @@
-import { motion } from 'framer-motion';
+import { TabTransition } from '../../components/animations';
 import type { GermanTabProps, ProgressStepProps, ProgressStatus } from './types';
+import { B1Countdown } from '../../components/B1Countdown';
+import { Save } from 'lucide-react';
 
-export function GermanTab({ germanStats, setGermanStats }: GermanTabProps) {
-  const b1Deadline = new Date('2026-12-31');
-  const today = new Date();
-  const daysLeft = Math.ceil((b1Deadline.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-  
-  // Calculate progress to B1
-  const wordsNeeded = 3000;
-  const progressPercent = Math.min(100, (germanStats.totalWords / wordsNeeded) * 100);
-
+export function GermanTab({ germanStats, setGermanStats, onSave, isSaving, streak }: GermanTabProps) {
   return (
-    <motion.div
-      initial={{ opacity: 0, x: 20 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: -20 }}
-      className="space-y-6"
-    >
-      {/* B1 Countdown Dashboard */}
-      <div className="glass-card rounded-2xl p-6 bg-linear-to-br from-accent-yellow/10 via-accent-orange/10 to-accent-red/10 border border-accent-yellow/30">
-        <div className="text-center mb-6">
-          <h3 className="text-lg text-text-secondary mb-2">🇩🇪 B1 CERTIFICATE COUNTDOWN</h3>
-          <div className="text-6xl font-bold text-accent-yellow mb-2">{daysLeft}</div>
-          <p className="text-text-muted">days until December 31, 2026</p>
-        </div>
-        
-        <div className="grid grid-cols-2 gap-4">
-          <div className="bg-black/20 rounded-xl p-4 text-center">
-            <div className="text-2xl font-bold text-accent-green">{germanStats.totalWords}</div>
-            <div className="text-xs text-text-muted">words learned</div>
-            <div className="text-xs text-accent-green">Goal: {wordsNeeded}</div>
-          </div>
-          <div className="bg-black/20 rounded-xl p-4 text-center">
-            <div className="text-2xl font-bold text-accent-cyan">{germanStats.ankiStreak}</div>
-            <div className="text-xs text-text-muted">day streak</div>
-            <div className="text-xs text-accent-cyan">Goal: 365</div>
-          </div>
-        </div>
-        
-        <div className="mt-4">
-          <div className="flex justify-between text-xs text-text-muted mb-1">
-            <span>B1 Progress</span>
-            <span>{Math.round(progressPercent)}%</span>
-          </div>
-          <div className="h-2 bg-black/30 rounded-full overflow-hidden">
-            <div className="h-full bg-accent-yellow rounded-full" style={{ width: `${progressPercent}%` }} />
-          </div>
-        </div>
+    <TabTransition>
+      {/* Header with Save Button */}
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-2xl font-bold text-gradient">🇩🇪 German Training</h2>
+        <button
+          onClick={onSave}
+          disabled={isSaving}
+          className="flex items-center gap-2 px-4 py-2 bg-accent-purple hover:bg-accent-purple/80 disabled:opacity-50 rounded-lg text-white font-medium transition-colors"
+        >
+          <Save size={18} />
+          {isSaving ? 'Saving...' : 'Save Progress'}
+        </button>
       </div>
+
+      {/* B1 Countdown Dashboard - Premium Component */}
+      <B1Countdown 
+        wordsLearned={germanStats.totalWords}
+        ankiStreak={germanStats.ankiStreak}
+      />
 
       {/* Anki Stats */}
       <div className="glass-card rounded-2xl p-6">
@@ -57,26 +33,44 @@ export function GermanTab({ germanStats, setGermanStats }: GermanTabProps) {
 
         <div className="grid grid-cols-2 gap-4 mb-4">
           <div className="bg-bg-secondary/50 rounded-xl p-4">
-            <label className="text-xs text-text-muted uppercase">Cards Today</label>
+            <label htmlFor="anki-cards" className="text-xs text-text-muted uppercase">Cards Today</label>
             <div className="flex items-center gap-2 mt-1">
               <input
-                type="number"
-                value={germanStats.ankiCards}
-                onChange={(e) => setGermanStats((prev) => ({ ...prev, ankiCards: Number(e.target.value) }))}
-                className="w-20 bg-transparent text-3xl font-bold text-text-primary focus:outline-none"
+                id="anki-cards"
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                placeholder="50"
+                value={germanStats.ankiCards || ''}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (val === '' || /^\d+$/.test(val)) {
+                    setGermanStats((prev) => ({ ...prev, ankiCards: val === '' ? 0 : parseInt(val, 10) }));
+                  }
+                }}
+                className="w-20 bg-transparent text-3xl font-bold text-text-primary focus:outline-none placeholder:text-text-muted/30"
               />
               <span className="text-accent-green text-sm">/ 70</span>
             </div>
           </div>
 
           <div className="bg-bg-secondary/50 rounded-xl p-4">
-            <label className="text-xs text-text-muted uppercase">Study Time</label>
+            <label htmlFor="anki-time" className="text-xs text-text-muted uppercase">Study Time</label>
             <div className="flex items-center gap-2 mt-1">
               <input
-                type="number"
-                value={germanStats.ankiTime}
-                onChange={(e) => setGermanStats((prev) => ({ ...prev, ankiTime: Number(e.target.value) }))}
-                className="w-20 bg-transparent text-3xl font-bold text-text-primary focus:outline-none"
+                id="anki-time"
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                placeholder="15"
+                value={germanStats.ankiTime || ''}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (val === '' || /^\d+$/.test(val)) {
+                    setGermanStats((prev) => ({ ...prev, ankiTime: val === '' ? 0 : parseInt(val, 10) }));
+                  }
+                }}
+                className="w-20 bg-transparent text-3xl font-bold text-text-primary focus:outline-none placeholder:text-text-muted/30"
               />
               <span className="text-text-muted">min</span>
             </div>
@@ -85,26 +79,31 @@ export function GermanTab({ germanStats, setGermanStats }: GermanTabProps) {
         
         <div className="grid grid-cols-2 gap-4">
           <div className="bg-bg-secondary/50 rounded-xl p-4">
-            <label className="text-xs text-text-muted uppercase">Current Streak</label>
+            <span className="text-xs text-text-muted uppercase">Current Streak</span>
             <div className="flex items-center gap-2 mt-1">
-              <input
-                type="number"
-                value={germanStats.ankiStreak}
-                onChange={(e) => setGermanStats((prev) => ({ ...prev, ankiStreak: Number(e.target.value) }))}
-                className="w-20 bg-transparent text-3xl font-bold text-accent-cyan focus:outline-none"
-              />
+              <span className="text-3xl font-bold text-accent-cyan">{streak}</span>
               <span className="text-text-muted">days</span>
             </div>
+            <span className="text-xs text-text-muted/60 mt-1 block">Auto-calculated from activity</span>
           </div>
 
           <div className="bg-bg-secondary/50 rounded-xl p-4">
-            <label className="text-xs text-text-muted uppercase">Total Words</label>
+            <label htmlFor="total-words" className="text-xs text-text-muted uppercase">Total Words</label>
             <div className="flex items-center gap-2 mt-1">
               <input
-                type="number"
-                value={germanStats.totalWords}
-                onChange={(e) => setGermanStats((prev) => ({ ...prev, totalWords: Number(e.target.value) }))}
-                className="w-20 bg-transparent text-3xl font-bold text-accent-green focus:outline-none"
+                id="total-words"
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                placeholder="500"
+                value={germanStats.totalWords || ''}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (val === '' || /^\d+$/.test(val)) {
+                    setGermanStats((prev) => ({ ...prev, totalWords: val === '' ? 0 : parseInt(val, 10) }));
+                  }
+                }}
+                className="w-20 bg-transparent text-3xl font-bold text-accent-green focus:outline-none placeholder:text-text-muted/30"
               />
               <span className="text-text-muted">words</span>
             </div>
@@ -120,8 +119,9 @@ export function GermanTab({ germanStats, setGermanStats }: GermanTabProps) {
         
         <div className="space-y-4">
           <div className="flex items-center justify-between p-3 bg-bg-secondary/30 rounded-lg">
-            <span className="text-text-primary">Lesson Completed Today</span>
+            <label htmlFor="lesson-completed" className="text-text-primary cursor-pointer">Lesson Completed Today</label>
             <input
+              id="lesson-completed"
               type="checkbox"
               checked={germanStats.languageTransfer}
               onChange={(e) => setGermanStats((prev) => ({ ...prev, languageTransfer: e.target.checked }))}
@@ -130,13 +130,22 @@ export function GermanTab({ germanStats, setGermanStats }: GermanTabProps) {
           </div>
           
           <div className="p-3 bg-bg-secondary/30 rounded-lg">
-            <label className="text-sm text-text-muted">Current Lesson Number</label>
+            <label htmlFor="lesson-number" className="text-sm text-text-muted">Current Lesson Number</label>
             <div className="flex items-center gap-2 mt-1">
               <input
-                type="number"
-                value={germanStats.languageTransferLesson}
-                onChange={(e) => setGermanStats((prev) => ({ ...prev, languageTransferLesson: Number(e.target.value) }))}
-                className="w-20 bg-transparent text-2xl font-bold text-text-primary focus:outline-none"
+                id="lesson-number"
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                placeholder="25"
+                value={germanStats.languageTransferLesson || ''}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (val === '' || /^\d+$/.test(val)) {
+                    setGermanStats((prev) => ({ ...prev, languageTransferLesson: val === '' ? 0 : parseInt(val, 10) }));
+                  }
+                }}
+                className="w-20 bg-transparent text-2xl font-bold text-text-primary focus:outline-none placeholder:text-text-muted/30"
               />
               <span className="text-text-muted">/ 90 lessons</span>
             </div>
@@ -161,24 +170,40 @@ export function GermanTab({ germanStats, setGermanStats }: GermanTabProps) {
 
         <div className="space-y-4">
           <div className="p-3 bg-bg-secondary/30 rounded-lg">
-            <label className="text-sm text-text-muted">Radio/Audiobook Hours</label>
+            <label htmlFor="radio-hours" className="text-sm text-text-muted">Radio/Audiobook Hours</label>
             <input
-              type="number"
-              step="0.5"
-              value={germanStats.radioHours}
-              onChange={(e) => setGermanStats((prev) => ({ ...prev, radioHours: Number(e.target.value) }))}
-              className="w-full bg-transparent text-xl font-bold text-text-primary focus:outline-none mt-1"
+              id="radio-hours"
+              type="text"
+              inputMode="decimal"
+              placeholder="2.5"
+              value={germanStats.radioHours || ''}
+              onChange={(e) => {
+                const val = e.target.value;
+                if (val === '' || /^\d*\.?\d*$/.test(val)) {
+                  setGermanStats((prev) => ({ ...prev, radioHours: val === '' ? 0 : parseFloat(val) }));
+                }
+              }}
+              className="w-full bg-transparent text-xl font-bold text-text-primary focus:outline-none mt-1 placeholder:text-text-muted/30"
             />
             <span className="text-xs text-accent-green">Target: 10h/day (work + commute)</span>
           </div>
 
           <div className="p-3 bg-bg-secondary/30 rounded-lg">
-            <label className="text-sm text-text-muted">Tandem Session (minutes)</label>
+            <label htmlFor="tandem-minutes" className="text-sm text-text-muted">Tandem Session (minutes)</label>
             <input
-              type="number"
-              value={germanStats.tandemMinutes}
-              onChange={(e) => setGermanStats((prev) => ({ ...prev, tandemMinutes: Number(e.target.value) }))}
-              className="w-full bg-transparent text-xl font-bold text-text-primary focus:outline-none mt-1"
+              id="tandem-minutes"
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              placeholder="45"
+              value={germanStats.tandemMinutes || ''}
+              onChange={(e) => {
+                const val = e.target.value;
+                if (val === '' || /^\d+$/.test(val)) {
+                  setGermanStats((prev) => ({ ...prev, tandemMinutes: val === '' ? 0 : parseInt(val, 10) }));
+                }
+              }}
+              className="w-full bg-transparent text-xl font-bold text-text-primary focus:outline-none mt-1 placeholder:text-text-muted/30"
             />
             <span className="text-xs text-accent-green">Target: 3h/week (starting May)</span>
           </div>
@@ -209,7 +234,7 @@ export function GermanTab({ germanStats, setGermanStats }: GermanTabProps) {
           />
         </div>
       </div>
-    </motion.div>
+    </TabTransition>
   );
 }
 

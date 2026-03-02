@@ -1,9 +1,13 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { EMOJIS } from '../utils/emojis';
 import { useGame } from '../store/useGame';
 import { useAuth } from '../contexts/useAuth';
 import { TiltCard } from '../components/animations';
+import { WeeklyScorecard } from '../components/WeeklyScorecard';
+import { SavingsProgress } from '../components/SavingsProgress';
+import { JobHuntTracker } from '../components/JobHuntTracker';
+import { calculateCoreStats } from '../utils/coreStats';
 
 interface StatBarProps {
   name: string;
@@ -114,48 +118,6 @@ function Badge({ icon, name, description: _unusedDescription, rarity, unlocked }
   );
 }
 
-// Calculate core stats from player data
-function calculateCoreStats(player: { pillars?: Record<string, { level?: number }>; skills?: Record<string, { level?: number }>; activityStats?: { habitsCompleted?: number; focusSessions?: number; journalEntries?: number; questsCompleted?: number } }) {
-  const stats = {
-    strength: 10,
-    agility: 10,
-    intelligence: 10,
-    wisdom: 10,
-    charisma: 10,
-    constitution: 10,
-    discipline: 10,
-    creativity: 10,
-  };
-  
-  if (!player) return stats;
-  
-  // Strength from Vessel pillar + gym habits
-  stats.strength = 10 + (player.pillars?.vessel?.level || 0) * 2 + Math.floor((player.activityStats?.habitsCompleted || 0) / 5);
-  
-  // Agility from Vessel + focus speed
-  stats.agility = 10 + (player.pillars?.vessel?.level || 0) + Math.floor((player.activityStats?.focusSessions || 0) / 3);
-  
-  // Intelligence from Craft pillar
-  stats.intelligence = 10 + (player.pillars?.craft?.level || 0) * 2 + Object.values(player.skills || {}).reduce((sum: number, s: { level?: number }) => sum + (s.level || 0), 0);
-  
-  // Wisdom from Principle + journal entries
-  stats.wisdom = 10 + (player.pillars?.principle?.level || 0) * 2 + Math.floor((player.activityStats?.journalEntries || 0) / 2);
-  
-  // Charisma from Tongue pillar
-  stats.charisma = 10 + (player.pillars?.tongue?.level || 0) * 2;
-  
-  // Constitution from overall consistency
-  stats.constitution = 10 + Math.floor((player.activityStats?.habitsCompleted || 0) / 10) + Math.floor((player.activityStats?.questsCompleted || 0) / 5);
-  
-  // Discipline from streaks and consistency
-  stats.discipline = 10 + Math.floor((player.activityStats?.focusSessions || 0) / 2) + Math.floor((player.activityStats?.habitsCompleted || 0) / 5);
-  
-  // Creativity from Craft + variety of activities
-  stats.creativity = 10 + (player.pillars?.craft?.level || 0) + Object.keys(player.skills || {}).length;
-  
-  return stats;
-}
-
 // Get title based on stats
 function getCharacterTitle(stats: Record<string, number>) {
   const avgStat = Object.values(stats).reduce((a: number, b: number) => a + b, 0) / Object.values(stats).length;
@@ -174,16 +136,19 @@ export function CharacterProfileView() {
   const [editMode, setEditMode] = useState(false);
   const [characterName, setCharacterName] = useState('Unnamed Warrior');
   
-  // Update character name when user data loads
+  // Update character name when user data loads - only once when data becomes available
+  const hasInitializedName = useRef(false);
   useEffect(() => {
-    requestAnimationFrame(() => {
-      // Use player.name only if it's set and not the default
-      if (player?.name && player.name !== 'Unnamed Warrior') {
-        setCharacterName(player.name);
-      } else if (user?.username) {
-        setCharacterName(user.username);
-      }
-    });
+    if (hasInitializedName.current) return;
+    
+    // Use player.name only if it's set and not the default
+    if (player?.name && player.name !== 'Unnamed Warrior') {
+      queueMicrotask(() => setCharacterName(player.name));
+      hasInitializedName.current = true;
+    } else if (user?.username) {
+      queueMicrotask(() => setCharacterName(user.username));
+      hasInitializedName.current = true;
+    }
   }, [player?.name, user?.username]);
   
   const coreStats = calculateCoreStats(player);
@@ -219,6 +184,39 @@ export function CharacterProfileView() {
 
   return (
     <div className="max-w-6xl mx-auto animate-slide-up pb-8">
+      {/* Weekly Scorecard */}
+      <WeeklyScorecard />
+      
+      {/* Savings Progress */}
+      <SavingsProgress />
+      
+      {/* Job Hunt Tracker */}
+      <JobHuntTracker />
+      
+      {/* Achievements - At the Top */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 }}
+        className="mb-6"
+      >
+        <h3 className="text-xl font-bold text-text-primary mb-4 flex items-center gap-2">
+          {EMOJIS.TROPHY} Achievements
+        </h3>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4">
+          {badges.map((badge, index) => (
+            <motion.div
+              key={badge.name}
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.2 + index * 0.05 }}
+            >
+              <Badge {...badge} />
+            </motion.div>
+          ))}
+        </div>
+      </motion.div>
+
       {/* Hero Section */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
         {/* Character Card */}
@@ -309,13 +307,15 @@ export function CharacterProfileView() {
                   className="text-xl font-bold text-center bg-transparent border-b-2 border-accent-purple outline-none text-text-primary w-full mb-1"
                 />
               ) : (
-                <h2 
-                  className="text-2xl font-bold text-text-primary mb-1 cursor-pointer hover:text-accent-purple transition-colors"
+                <button
+                  type="button"
+                  className="text-2xl font-bold text-text-primary mb-1 cursor-pointer hover:text-accent-purple transition-colors bg-transparent border-none p-0"
                   onClick={() => setEditMode(true)}
                   title="Click to edit"
+                  aria-label="Edit character name"
                 >
                   {characterName}
-                </h2>
+                </button>
               )}
               
               {/* Title */}
@@ -383,30 +383,6 @@ export function CharacterProfileView() {
           </div>
         </motion.div>
       </div>
-      
-      {/* Badges Section */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
-        className="mb-8"
-      >
-        <h3 className="text-xl font-bold text-text-primary mb-4 flex items-center gap-2">
-          {EMOJIS.TROPHY} Achievements
-        </h3>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4">
-          {badges.map((badge, index) => (
-            <motion.div
-              key={badge.name}
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.3 + index * 0.05 }}
-            >
-              <Badge {...badge} />
-            </motion.div>
-          ))}
-        </div>
-      </motion.div>
       
       {/* Battle Stats */}
       <motion.div

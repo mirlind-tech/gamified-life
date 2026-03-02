@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { X, ArrowRight } from 'lucide-react';
 import { EMOJIS } from '../utils/emojis';
-import { logger } from '../utils/logger';
 import { useGame } from '../store/useGame';
+import { loadJson, saveJson } from '../utils/storage';
 
 // ============================================================================
 // Types
@@ -60,6 +61,8 @@ interface EveningData {
   completed?: string;
   learned?: string;
   tomorrow?: string;
+  lesson?: string;
+  tomorrowFocus?: string;
 }
 
 // ============================================================================
@@ -191,9 +194,9 @@ const EVENING_PROMPTS: JournalPrompt[] = [
 const MOODS = [
   { emoji: EMOJIS.FIRE, label: 'great', color: '#f59e0b', desc: 'Unstoppable' },
   { emoji: EMOJIS.SMILE, label: 'good', color: '#10b981', desc: 'On Track' },
-  { emoji: EMOJIS.NEUTRAL, label: 'neutral', color: '#64748b', desc: 'Steady' },
+  { emoji: EMOJIS.NEUTRAL, label: 'neutral', color: '#94a3b8', desc: 'Steady' },
   { emoji: EMOJIS.FROWN, label: 'bad', color: '#ef4444', desc: 'Struggling' },
-  { emoji: EMOJIS.SKULL, label: 'terrible', color: '#475569', desc: 'Broken' },
+  { emoji: EMOJIS.SKULL, label: 'terrible', color: '#94a3b8', desc: 'Broken' },
 ];
 
 const FANG_YUAN_QUOTES = [
@@ -246,16 +249,9 @@ export function JournalView() {
 
   // Load initial data from localStorage using lazy initialization
   const [entries, setEntries] = useState<JournalEntry[]>(() => {
-    try {
-      const saved = localStorage.getItem('mirlind-journal-v2');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        return parsed.entries || [];
-      }
-    } catch (e) {
-      logger.error('Failed to load journal:', e);
-    }
-    return [];
+    const saved = loadJson<{ entries?: JournalEntry[] } | null>('mirlind-journal-v2', null);
+    if (!saved?.entries) return [];
+    return saved.entries;
   });
 
   const [currentSection, setCurrentSection] = useState<JournalSection['id']>(getInitialSection);
@@ -288,16 +284,18 @@ export function JournalView() {
     return todayEntry?.progress?.bakiIntensity || 3;
   });
 
+  const [viewingEntry, setViewingEntry] = useState<JournalEntry | null>(null);
+
   // Auto-save draft
   useEffect(() => {
     const timer = setTimeout(() => {
       if (Object.keys(formData).length > 0) {
-        localStorage.setItem('mirlind-journal-draft', JSON.stringify({
+        saveJson('mirlind-journal-draft', {
           ...formData,
           mood: selectedMood,
           energyLevel,
           bakiIntensity,
-        }));
+        });
       }
     }, 3000);
     return () => clearTimeout(timer);
@@ -385,7 +383,7 @@ export function JournalView() {
       : [newEntry, ...entries];
 
     setEntries(updatedEntries);
-    localStorage.setItem('mirlind-journal-v2', JSON.stringify({ entries: updatedEntries }));
+    saveJson('mirlind-journal-v2', { entries: updatedEntries });
     
     // Track activity and award XP
     await trackActivity('journalEntries', 1);
@@ -521,8 +519,8 @@ export function JournalView() {
               <div className="flex items-center gap-2 mb-1">
                 <span className="text-xl">{section.emoji}</span>
                 <span 
-                  className="text-xs font-medium px-2 py-0.5 rounded-full"
-                  style={{ background: `${section.color}30`, color: section.color }}
+                  className="text-xs font-medium px-2 py-0.5 rounded-full text-white"
+                  style={{ background: `${section.color}40` }}
                 >
                   Step {index + 1}
                 </span>
@@ -541,9 +539,9 @@ export function JournalView() {
 
       {/* Mood Selector */}
       <div className="bg-bg-card border border-border rounded-xl p-4 mb-6">
-        <label className="block text-sm font-medium text-text-secondary mb-3">
+        <p className="block text-sm font-medium text-text-secondary mb-3">
           How are you feeling right now?
-        </label>
+        </p>
         <div className="flex gap-2 flex-wrap">
           {MOODS.map(mood => (
             <motion.button
@@ -611,11 +609,13 @@ export function JournalView() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.05 }}
               >
-                <label className="block text-sm font-medium text-text-secondary mb-2">
+                <label htmlFor={`${currentSection}-${prompt.id}`} className="block text-sm font-medium text-text-secondary mb-2">
                   {prompt.label}
                   {prompt.required && <span className="text-accent-red ml-1">*</span>}
                 </label>
                 <textarea
+                  id={`${currentSection}-${prompt.id}`}
+                  name={`${currentSection}-${prompt.id}`}
                   value={(formData[currentSection] as Record<string, string> | undefined)?.[prompt.id] || ''}
                   onChange={(e) => handleInputChange(currentSection, prompt.id, e.target.value)}
                   placeholder={prompt.placeholder}
@@ -633,9 +633,9 @@ export function JournalView() {
                   animate={{ opacity: 1, y: 0 }}
                   className="pt-4 border-t border-border"
                 >
-                  <label className="block text-sm font-medium text-text-secondary mb-3">
+                  <p className="block text-sm font-medium text-text-secondary mb-3">
                     {EMOJIS.ZAP} Energy Level (1-5)
-                  </label>
+                  </p>
                   <div className="flex gap-3">
                     {[1, 2, 3, 4, 5].map(level => (
                       <motion.button
@@ -661,9 +661,9 @@ export function JournalView() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.1 }}
                 >
-                  <label className="block text-sm font-medium text-text-secondary mb-3">
+                  <p className="block text-sm font-medium text-text-secondary mb-3">
                     {EMOJIS.FIRE} Baki Intensity (How hard did you train?)
-                  </label>
+                  </p>
                   <div className="flex gap-3">
                     {[1, 2, 3, 4, 5].map(level => (
                       <motion.button
@@ -706,7 +706,7 @@ export function JournalView() {
               disabled={isSaving}
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              className="px-6 py-2.5 bg-accent-purple hover:bg-accent-purple/80 disabled:opacity-50 text-white font-semibold rounded-lg transition-colors flex items-center gap-2"
+              className="px-6 py-2.5 bg-accent-purple-dark hover:bg-accent-purple-dark/80 disabled:opacity-50 text-white font-semibold rounded-lg transition-colors flex items-center gap-2"
             >
               {isSaving ? (
                 <>
@@ -733,7 +733,7 @@ export function JournalView() {
           onClick={() => setShowHistory(!showHistory)}
           className="flex items-center gap-2 text-text-secondary hover:text-text-primary transition-colors"
         >
-          <span>{showHistory ? '✕' : EMOJIS.BOOK}</span>
+          <span>{showHistory ? <X size={16} /> : EMOJIS.BOOK}</span>
           <span className="font-medium">
             {showHistory ? 'Hide History' : `View Past Entries (${entries.length})`}
           </span>
@@ -756,6 +756,7 @@ export function JournalView() {
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: index * 0.05 }}
+                    onClick={() => setViewingEntry(entry)}
                     className="bg-bg-card border border-border rounded-xl p-4 flex items-center gap-4 hover:border-border-hover transition-colors cursor-pointer"
                   >
                     <div 
@@ -790,7 +791,7 @@ export function JournalView() {
                         )}
                       </div>
                     </div>
-                    <div className="text-text-muted">→</div>
+                    <div className="text-text-muted"><ArrowRight size={16} /></div>
                   </motion.div>
                 );
               })}
@@ -805,6 +806,120 @@ export function JournalView() {
           )}
         </AnimatePresence>
       </div>
+
+      {/* View Past Entry Modal */}
+      <AnimatePresence>
+        {viewingEntry && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+            onClick={() => setViewingEntry(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-bg-card border border-border rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Header */}
+              <div className="sticky top-0 bg-bg-card border-b border-border p-4 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <span className="text-2xl">{MOODS.find(m => m.label === viewingEntry.mood)?.emoji}</span>
+                  <div>
+                    <h3 className="font-bold text-text-primary">{formatDate(viewingEntry.date)}</h3>
+                    <span className="text-sm text-text-muted">{viewingEntry.completionScore}% Complete</span>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setViewingEntry(null)}
+                  className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+
+              {/* Content */}
+              <div className="p-4 space-y-6">
+                {/* Morning Section */}
+                {viewingEntry.morning && (
+                  <div>
+                    <h4 className="font-semibold text-accent-yellow mb-2 flex items-center gap-2">
+                      🌅 Morning Intentions
+                    </h4>
+                    <div className="space-y-2 text-sm">
+                      {viewingEntry.morning.goal1 && (
+                        <p><span className="text-text-muted">Primary:</span> {viewingEntry.morning.goal1}</p>
+                      )}
+                      {viewingEntry.morning.goal2 && (
+                        <p><span className="text-text-muted">Secondary:</span> {viewingEntry.morning.goal2}</p>
+                      )}
+                      {viewingEntry.morning.goal3 && (
+                        <p><span className="text-text-muted">Growth:</span> {viewingEntry.morning.goal3}</p>
+                      )}
+                      {viewingEntry.morning.fangYuanMindset && (
+                        <p><span className="text-text-muted">Mindset:</span> {viewingEntry.morning.fangYuanMindset}</p>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Progress Section */}
+                {viewingEntry.progress && (
+                  <div>
+                    <h4 className="font-semibold text-accent-cyan mb-2 flex items-center gap-2">
+                      📊 Progress Check-in
+                    </h4>
+                    <div className="space-y-2 text-sm">
+                      {viewingEntry.progress.wins && (
+                        <p><span className="text-text-muted">Wins:</span> {viewingEntry.progress.wins}</p>
+                      )}
+                      {viewingEntry.progress.obstacles && (
+                        <p><span className="text-text-muted">Obstacles:</span> {viewingEntry.progress.obstacles}</p>
+                      )}
+                      {viewingEntry.progress.adjustments && (
+                        <p><span className="text-text-muted">Adjustments:</span> {viewingEntry.progress.adjustments}</p>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Evening Section */}
+                {viewingEntry.evening && (
+                  <div>
+                    <h4 className="font-semibold text-accent-purple mb-2 flex items-center gap-2">
+                      🌙 Evening Reflection
+                    </h4>
+                    <div className="space-y-2 text-sm">
+                      {viewingEntry.evening.gratitude1 && (
+                        <p><span className="text-text-muted">Gratitude:</span> {viewingEntry.evening.gratitude1}</p>
+                      )}
+                      {viewingEntry.evening.gratitude2 && (
+                        <p><span className="text-text-muted">Gratitude:</span> {viewingEntry.evening.gratitude2}</p>
+                      )}
+                      {viewingEntry.evening.gratitude3 && (
+                        <p><span className="text-text-muted">Gratitude:</span> {viewingEntry.evening.gratitude3}</p>
+                      )}
+                      {(viewingEntry.evening.learned || viewingEntry.evening.lesson) && (
+                        <p><span className="text-text-muted">Lesson:</span> {viewingEntry.evening.learned || viewingEntry.evening.lesson}</p>
+                      )}
+                      {(viewingEntry.evening.tomorrow || viewingEntry.evening.tomorrowFocus) && (
+                        <p><span className="text-text-muted">Tomorrow:</span> {viewingEntry.evening.tomorrow || viewingEntry.evening.tomorrowFocus}</p>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {!viewingEntry.morning && !viewingEntry.progress && !viewingEntry.evening && (
+                  <p className="text-center text-text-muted py-8">No detailed content saved for this entry.</p>
+                )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

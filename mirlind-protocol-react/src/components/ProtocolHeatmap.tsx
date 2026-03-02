@@ -47,10 +47,10 @@ export function ProtocolHeatmap({ data, title = 'Protocol Streak' }: ProtocolHea
       <h3 className="text-lg font-bold text-text-primary mb-4">{title}</h3>
       
       <div className="flex gap-2">
-        {/* Day labels */}
-        <div className="flex flex-col gap-1 pt-6">
-          {days.filter((_, i) => i % 2 === 0).map((day) => (
-            <div key={day} className="h-3 text-xs text-text-muted w-8">
+        {/* Day labels - aligned with squares */}
+        <div className="flex flex-col gap-1 justify-center">
+          {days.map((day) => (
+            <div key={day} className="h-3 text-xs text-text-muted w-8 leading-3">
               {day.slice(0, 3)}
             </div>
           ))}

@@ -37,7 +37,7 @@ export function ChallengesView() {
   const [showConfetti, setShowConfetti] = useState(false);
 
   // Special challenges state
-  const [specialChallenges] = useState(() => getActiveSpecialChallenges());
+  const [specialChallenges, setSpecialChallenges] = useState(() => getActiveSpecialChallenges());
 
   const handleComplete = async (challenge: Challenge) => {
     if (completedToday.includes(challenge.id)) return;
@@ -112,7 +112,7 @@ export function ChallengesView() {
           onClick={() => setActiveTab('daily')}
           className={`flex-1 py-3 px-4 rounded-xl font-semibold transition-all ${
             activeTab === 'daily'
-              ? 'bg-accent-purple text-white'
+              ? 'bg-accent-purple-dark text-white'
               : 'bg-bg-secondary text-text-secondary hover:text-text-primary'
           }`}
         >
@@ -122,7 +122,7 @@ export function ChallengesView() {
           onClick={() => setActiveTab('special')}
           className={`flex-1 py-3 px-4 rounded-xl font-semibold transition-all ${
             activeTab === 'special'
-              ? 'bg-accent-purple text-white'
+              ? 'bg-accent-purple-dark text-white'
               : 'bg-bg-secondary text-text-secondary hover:text-text-primary'
           }`}
         >
@@ -310,7 +310,7 @@ function DailyChallengesTab({
                   }}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
-                  className="mt-4 w-full py-2.5 bg-accent-purple hover:bg-accent-purple/80 text-white font-semibold rounded-lg transition-colors flex items-center justify-center gap-2"
+                  className="mt-4 w-full py-2.5 bg-accent-purple-dark hover:bg-accent-purple-dark/80 text-white font-semibold rounded-lg transition-colors flex items-center justify-center gap-2"
                 >
                   {EMOJIS.CHECK} Complete Challenge
                 </motion.button>
@@ -456,7 +456,7 @@ function SpecialChallengesTab({
                 </div>
                 <button
                   onClick={() => onStart(challenge)}
-                  className="px-4 py-2 bg-accent-purple hover:bg-accent-purple/80 text-white font-semibold rounded-lg transition-colors text-sm whitespace-nowrap"
+                  className="px-4 py-2 bg-accent-purple-dark hover:bg-accent-purple-dark/80 text-white font-semibold rounded-lg transition-colors text-sm whitespace-nowrap"
                 >
                   Start Quest
                 </button>

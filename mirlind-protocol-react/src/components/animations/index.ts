@@ -1,3 +1,4 @@
+export { TabTransition } from './TabTransition';
 export { FadeIn, FadeInOnScroll } from './FadeIn';
 export { StaggerContainer, StaggerItem } from './StaggerContainer';
 export { ScaleOnHover, CardHover } from './ScaleOnHover';

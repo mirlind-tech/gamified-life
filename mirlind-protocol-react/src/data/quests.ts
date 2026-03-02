@@ -84,9 +84,6 @@ export const DEFAULT_QUESTS: Quest[] = [
   },
 ];
 
-// Aliases for backward compatibility
-export const getQuests = getDailyQuests;
-
 export function getTimeUntilReset(): string {
   const now = new Date();
   const tomorrow = new Date(now);

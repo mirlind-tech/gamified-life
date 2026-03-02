@@ -176,7 +176,7 @@ export function MeditationView() {
                 style={{ backgroundColor: technique.color }}
               />
               <h3 className="font-semibold text-text-primary text-sm">{technique.name}</h3>
-              <p className="text-xs text-text-secondary mt-1">{technique.description}</p>
+              <p className={`text-xs mt-1 ${isActive ? 'text-text-primary' : 'text-text-secondary'}`}>{technique.description}</p>
             </motion.button>
           ))}
         </div>
@@ -287,7 +287,7 @@ export function MeditationView() {
           {!isActive ? (
             <motion.button
               onClick={startSession}
-              className="px-8 py-3 bg-accent-purple hover:bg-accent-purple/80 text-white font-bold rounded-xl transition-colors flex items-center gap-2"
+              className="px-8 py-3 bg-accent-purple-dark hover:bg-accent-purple-dark/80 text-white font-bold rounded-xl transition-colors flex items-center gap-2"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Check, Lock } from 'lucide-react';
 import {
   JAVASCRIPT_ROADMAP,
   getRoadmapProgress,
@@ -101,7 +102,7 @@ export function CodingRoadmapTab() {
                             w-10 h-10 rounded-lg flex items-center justify-center text-lg
                             ${isCompleted ? 'bg-green-500/20 text-green-500' : isLocked ? 'bg-white/5 text-text-muted' : 'bg-accent-cyan/20 text-accent-cyan'}
                           `}>
-                            {isCompleted ? '✓' : isLocked ? '🔒' : module.icon}
+                            {isCompleted ? <Check className="w-5 h-5" /> : isLocked ? <Lock className="w-5 h-5" /> : module.icon}
                           </div>
                           <div>
                             <h4 className={`font-semibold ${isCompleted ? 'text-green-500' : 'text-text-primary'}`}>

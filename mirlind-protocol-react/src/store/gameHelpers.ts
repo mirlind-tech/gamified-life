@@ -21,6 +21,8 @@ export interface ApiUser {
   totalXPEarned?: number;
   questsCompleted?: number;
   startDate?: string;
+  statLastUsed?: StatLastUsed;
+  lastDecayCheck?: string;
 }
 
 const initialActivityStats: ActivityStats = {

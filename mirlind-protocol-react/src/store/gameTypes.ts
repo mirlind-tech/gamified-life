@@ -21,10 +21,6 @@ export interface GameContextType {
   showToast: (message: string, type?: Toast['type'], duration?: number) => void;
   // Activity tracking
   trackActivity: (type: keyof ActivityStats, value: number) => Promise<void>;
-  // Auth
-  login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string, username: string) => Promise<void>;
-  logout: () => void;
   // XP
   addXP: (amount: number, skill: string) => Promise<void>;
   // Willpower & Decay

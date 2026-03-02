@@ -24,7 +24,7 @@ const FOCUS_MODES: FocusMode[] = [
     name: 'Deep Study',
     description: '40Hz gamma waves for learning & memory',
     icon: '📚',
-    color: '#8b5cf6',
+    color: '#7c3aed',  // Darker purple for WCAG AA button contrast
     defaultDuration: 45,
     binauralFreq: { left: 200, right: 240 }, // 40Hz gamma
     ambientType: 'study',
@@ -34,7 +34,7 @@ const FOCUS_MODES: FocusMode[] = [
     name: 'Flow Work',
     description: 'Alpha waves for productivity & focus',
     icon: '💻',
-    color: '#06b6d4',
+    color: '#155e75',  // Darker cyan for WCAG AA button contrast
     defaultDuration: 52,
     binauralFreq: { left: 200, right: 210 }, // 10Hz alpha
     ambientType: 'work',
@@ -44,7 +44,7 @@ const FOCUS_MODES: FocusMode[] = [
     name: 'Beast Mode',
     description: 'Beta waves for energy & motivation',
     icon: '💪',
-    color: '#ef4444',
+    color: '#dc2626',  // Darker red for WCAG AA button contrast
     defaultDuration: 30,
     binauralFreq: { left: 200, right: 220 }, // 20Hz beta
     ambientType: 'workout',
@@ -54,7 +54,7 @@ const FOCUS_MODES: FocusMode[] = [
     name: 'Creative Flow',
     description: 'Theta waves for creativity & insight',
     icon: '✨',
-    color: '#f59e0b',
+    color: '#d97706',  // Darker amber for WCAG AA button contrast
     defaultDuration: 60,
     binauralFreq: { left: 200, right: 206 }, // 6Hz theta
     ambientType: 'creative',
@@ -64,7 +64,7 @@ const FOCUS_MODES: FocusMode[] = [
     name: 'Mindfulness',
     description: 'Delta waves for deep relaxation',
     icon: '🧘',
-    color: '#10b981',
+    color: '#059669',  // Darker emerald for WCAG AA button contrast
     defaultDuration: 20,
     binauralFreq: { left: 200, right: 202 }, // 2Hz delta
     ambientType: 'meditate',
@@ -207,22 +207,44 @@ export function FocusView() {
   
   const { showToast, trackActivity, addXP } = useGame();
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const endTimeRef = useRef<number | null>(null);
+  const completionInFlightRef = useRef(false);
+  const volumeRef = useRef(volume);
   const totalTime = useRef(customDuration ? customDuration * 60 : selectedMode.defaultDuration * 60);
+
+  const getSessionSeconds = useCallback(() => {
+    return (customDuration ?? selectedMode.defaultDuration) * 60;
+  }, [customDuration, selectedMode.defaultDuration]);
 
   // Complete session callback - defined before timer effect
   const completeSession = useCallback(async () => {
+    if (completionInFlightRef.current) return;
+    completionInFlightRef.current = true;
+
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+
     setIsRunning(false);
+    endTimeRef.current = null;
     binauralAudio.stop();
     
     const minutes = Math.floor(totalTime.current / 60);
-    
-    // Award XP and track
-    await addXP(minutes * 2, 'focus');
-    await trackActivity('focusSessions', 1);
-    await trackActivity('focusMinutes', minutes);
-    
+
+    let trackingFailed = false;
+    try {
+      // Award XP and track
+      await addXP(minutes * 2, 'principle');
+      await trackActivity('focusSessions', 1);
+      await trackActivity('focusMinutes', minutes);
+    } catch (error) {
+      trackingFailed = true;
+      logger.error('Focus session completion tracking failed:', error);
+    }
+
     setSessionCount(prev => prev + 1);
-    
+
     // Celebration
     fireConfetti({
       particleCount: 100,
@@ -230,46 +252,73 @@ export function FocusView() {
       origin: { y: 0.6 },
       colors: [selectedMode.color, '#ffffff'],
     });
-    
-    showToast(
-      `🎯 ${selectedMode.name} complete! +${minutes * 2} XP`,
-      'success',
-      4000
-    );
-    
+
+    if (trackingFailed) {
+      showToast(
+        `${selectedMode.name} complete. Progress sync failed, try again.`,
+        'warning',
+        4000
+      );
+    } else {
+      showToast(
+        `🎯 ${selectedMode.name} complete! +${minutes * 2} XP`,
+        'success',
+        4000
+      );
+    }
+
     // Reset timer
-    setTimeLeft(customDuration ? customDuration * 60 : selectedMode.defaultDuration * 60);
-  }, [addXP, trackActivity, showToast, selectedMode, customDuration]);
+    const resetSeconds = getSessionSeconds();
+    totalTime.current = resetSeconds;
+    setTimeLeft(resetSeconds);
+    completionInFlightRef.current = false;
+  }, [addXP, trackActivity, showToast, selectedMode, getSessionSeconds]);
 
   // Update total time when mode or custom duration changes (only when not running)
   useEffect(() => {
     if (!isRunning) {
-      totalTime.current = customDuration ? customDuration * 60 : selectedMode.defaultDuration * 60;
+      totalTime.current = getSessionSeconds();
       setTimeLeft(totalTime.current);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedMode, customDuration]); // Intentionally NOT including isRunning to prevent reset on pause
+  }, [selectedMode, customDuration, getSessionSeconds]); // Intentionally NOT including isRunning to prevent reset on pause
 
   // Timer logic
   useEffect(() => {
-    if (isRunning && timeLeft > 0) {
-      timerRef.current = setInterval(() => {
-        setTimeLeft((prev) => {
-          if (prev <= 1) {
-            completeSession();
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    } else if (timeLeft === 0 && isRunning) {
-      completeSession();
+    if (isRunning) {
+      if (endTimeRef.current === null) {
+        endTimeRef.current = Date.now() + (totalTime.current * 1000);
+      }
+
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
+
+      const tick = () => {
+        if (endTimeRef.current === null) return;
+
+        const remainingMs = endTimeRef.current - Date.now();
+        const nextTimeLeft = Math.max(0, Math.ceil(remainingMs / 1000));
+
+        setTimeLeft(prev => (prev === nextTimeLeft ? prev : nextTimeLeft));
+
+        if (remainingMs <= 0) {
+          if (timerRef.current) clearInterval(timerRef.current);
+          timerRef.current = null;
+          completeSession();
+        }
+      };
+
+      // Immediate tick avoids visual lag after start/resume.
+      tick();
+      timerRef.current = setInterval(tick, 250);
     }
 
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
+      timerRef.current = null;
     };
-  }, [isRunning, timeLeft, completeSession]);
+  }, [isRunning, completeSession]);
 
   // Audio control
   useEffect(() => {
@@ -277,7 +326,7 @@ export function FocusView() {
       binauralAudio.play(
         selectedMode.binauralFreq.left,
         selectedMode.binauralFreq.right,
-        volume
+        volumeRef.current
       );
     } else {
       binauralAudio.stop();
@@ -286,30 +335,65 @@ export function FocusView() {
     return () => {
       binauralAudio.stop();
     };
-  }, [isRunning, audioEnabled, selectedMode, volume]);
+  }, [isRunning, audioEnabled, selectedMode]);
 
-  const toggleTimer = useCallback(async () => {
+  useEffect(() => {
+    volumeRef.current = volume;
+    if (binauralAudio.isActive()) {
+      binauralAudio.setVolume(volume);
+    }
+  }, [volume]);
+
+  const toggleTimer = useCallback(() => {
     if (isRunning) {
+      if (endTimeRef.current !== null) {
+        const remainingSeconds = Math.max(0, Math.ceil((endTimeRef.current - Date.now()) / 1000));
+        setTimeLeft(remainingSeconds);
+      }
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+
       // Just pause - audio useEffect will handle stopping
       setIsRunning(false);
+      endTimeRef.current = null;
     } else {
+      const sessionSeconds = timeLeft > 0 ? timeLeft : getSessionSeconds();
+
+      if (timeLeft <= 0) {
+        setTimeLeft(sessionSeconds);
+      }
+
       try {
         // Initialize audio context on user interaction (required by browsers)
         binauralAudio.init();
+        endTimeRef.current = Date.now() + (sessionSeconds * 1000);
         setIsRunning(true);
       } catch (error) {
         logger.error('Audio init failed:', error);
         // Start timer anyway even if audio fails
+        endTimeRef.current = Date.now() + (sessionSeconds * 1000);
         setIsRunning(true);
       }
     }
-  }, [isRunning]);
+  }, [isRunning, timeLeft, getSessionSeconds]);
 
   const resetTimer = useCallback(() => {
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+
     setIsRunning(false);
+    endTimeRef.current = null;
+    completionInFlightRef.current = false;
     binauralAudio.stop();
-    setTimeLeft(customDuration ? customDuration * 60 : selectedMode.defaultDuration * 60);
-  }, [customDuration, selectedMode]);
+
+    const resetSeconds = getSessionSeconds();
+    totalTime.current = resetSeconds;
+    setTimeLeft(resetSeconds);
+  }, [getSessionSeconds]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -323,7 +407,7 @@ export function FocusView() {
     <div className="max-w-5xl mx-auto animate-slide-up pb-8">
       {/* Header */}
       <div className="mb-8">
-        <h2 className="text-2xl font-bold text-text-primary mb-2">
+        <h2 className="text-2xl font-bold text-text-primary mb-2 neon-text">
           {EMOJIS.FOCUS} NeuroFocus
         </h2>
         <p className="text-text-secondary">
@@ -363,8 +447,8 @@ export function FocusView() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
         {/* Timer */}
         <div className="lg:col-span-2">
-          <div 
-            className="glass-card rounded-3xl p-8 text-center relative overflow-hidden"
+          <div
+            className="glass-card neon-panel rounded-3xl p-8 text-center relative overflow-hidden"
             style={{ minHeight: '400px' }}
           >
             {/* Background glow */}
@@ -457,7 +541,7 @@ export function FocusView() {
         {/* Settings Panel */}
         <div className="space-y-4">
           {/* Audio Settings */}
-          <div className="glass-card rounded-2xl p-6">
+          <div className="glass-card neon-panel rounded-2xl p-6">
             <h4 className="text-lg font-semibold text-text-primary mb-4 flex items-center gap-2">
               🎧 Audio Settings
             </h4>
@@ -467,20 +551,11 @@ export function FocusView() {
               <span className="text-text-secondary">Binaural Beats</span>
               <button
                 onClick={() => {
-                  setAudioEnabled(!audioEnabled);
-                  if (isRunning && !audioEnabled) {
-                    binauralAudio.play(
-                      selectedMode.binauralFreq.left,
-                      selectedMode.binauralFreq.right,
-                      volume
-                    );
-                  } else if (!audioEnabled) {
-                    binauralAudio.stop();
-                  }
+                  setAudioEnabled(prev => !prev);
                 }}
                 className={`
                   px-3 py-1 rounded-full text-sm font-semibold transition-all
-                  ${audioEnabled ? 'bg-accent-green text-white' : 'bg-white/10 text-text-muted'}
+                  ${audioEnabled ? 'bg-accent-green-dark text-white' : 'bg-white/10 text-text-muted'}
                 `}
               >
                 {audioEnabled ? 'ON' : 'OFF'}
@@ -494,17 +569,17 @@ export function FocusView() {
                 <span>{Math.round(volume * 100)}%</span>
               </div>
               <input
+                id="focus-volume"
+                name="focus_volume"
                 type="range"
                 min="0"
                 max="0.5"
                 step="0.01"
+                aria-label="Volume"
                 value={volume}
                 onChange={(e) => {
                   const newVol = parseFloat(e.target.value);
                   setVolume(newVol);
-                  if (binauralAudio.isActive()) {
-                    binauralAudio.setVolume(newVol);
-                  }
                 }}
                 className="w-full h-2 bg-black/40 rounded-lg appearance-none cursor-pointer accent-accent-purple"
               />
@@ -526,7 +601,7 @@ export function FocusView() {
           </div>
 
           {/* Duration Settings */}
-          <div className="glass-card rounded-2xl p-6">
+          <div className="glass-card neon-panel rounded-2xl p-6">
             <h4 className="text-lg font-semibold text-text-primary mb-4">
               ⏱️ Duration
             </h4>
@@ -540,7 +615,7 @@ export function FocusView() {
                   className={`
                     px-3 py-2 rounded-lg text-sm font-medium transition-all
                     ${customDuration === mins || (!customDuration && selectedMode.defaultDuration === mins)
-                      ? 'bg-accent-purple text-white'
+                      ? 'bg-accent-purple-dark text-white'
                       : 'bg-white/5 text-text-secondary hover:bg-white/10'
                     }
                     ${isRunning ? 'opacity-50 cursor-not-allowed' : ''}
@@ -555,6 +630,8 @@ export function FocusView() {
             <div className="flex items-center gap-2">
               <span className="text-text-muted text-sm">Custom:</span>
               <input
+                id="focus-custom-duration"
+                name="focus_custom_duration"
                 type="number"
                 min="1"
                 max="180"
@@ -572,7 +649,7 @@ export function FocusView() {
           </div>
 
           {/* Mode Info */}
-          <div className="glass-card rounded-2xl p-6">
+          <div className="glass-card neon-panel rounded-2xl p-6">
             <h4 className="text-lg font-semibold text-text-primary mb-3">
               🧠 Brain Waves
             </h4>
@@ -607,7 +684,7 @@ export function FocusView() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3 }}
-        className="glass-card rounded-2xl p-6"
+        className="glass-card neon-panel rounded-2xl p-6"
       >
         <h4 className="text-lg font-semibold text-text-primary mb-4">
           💡 Focus Tips

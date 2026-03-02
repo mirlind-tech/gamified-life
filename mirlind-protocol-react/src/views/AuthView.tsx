@@ -2,6 +2,9 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../contexts/useAuth';
 import { EMOJIS } from '../utils/emojis';
+import { getApiUrl } from '../services/authApi';
+import { exportUserData } from '../services/exportApi';
+import { logger } from '../utils/logger';
 
 export function AuthView() {
   const [isLogin, setIsLogin] = useState(true);
@@ -9,8 +12,10 @@ export function AuthView() {
   const [password, setPassword] = useState('');
   const [username, setUsername] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
   
-  const { login, register, error, clearError, isAuthenticated, user } = useAuth();
+  const { login, register, error, clearError, isConnectivityError, isAuthenticated, user } = useAuth();
+  const apiUrl = getApiUrl();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,6 +36,29 @@ export function AuthView() {
   };
 
   if (isAuthenticated && user) {
+    const handleExport = async () => {
+      setIsExporting(true);
+      try {
+        const backup = await exportUserData();
+        const fileName = `gamified-life-backup-${user.username}-${new Date()
+          .toISOString()
+          .slice(0, 10)}.json`;
+        const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      } catch (error) {
+        logger.error('Failed to export user data:', error);
+      } finally {
+        setIsExporting(false);
+      }
+    };
+
     return (
       <div className="max-w-md mx-auto mt-20">
         <motion.div
@@ -48,6 +76,13 @@ export function AuthView() {
           <div className="text-sm text-text-muted">
             {user.email}
           </div>
+          <button
+            onClick={handleExport}
+            disabled={isExporting}
+            className="mt-5 px-4 py-2 rounded-lg bg-accent-cyan-dark text-white hover:bg-accent-cyan-dark/80 disabled:opacity-60"
+          >
+            {isExporting ? 'Exporting...' : 'Backup / Export Data'}
+          </button>
         </motion.div>
       </div>
     );
@@ -87,14 +122,28 @@ export function AuthView() {
           )}
         </AnimatePresence>
 
+        {error && isConnectivityError && (
+          <div className="mb-4 p-3 bg-amber-500/15 border border-amber-500/40 rounded-lg text-amber-200 text-xs space-y-1">
+            <p className="font-semibold">Connectivity help</p>
+            <p>1. Start backend: `cd backend && npm run dev`</p>
+            <p>2. Verify health: `http://localhost:3001/api/health`</p>
+            <p>3. Ensure backend CORS allows your frontend origin</p>
+          </div>
+        )}
+
+        <p className="mb-4 text-xs text-text-muted">
+          API endpoint: <span className="font-mono text-text-secondary">{apiUrl}</span>
+        </p>
+
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
           {!isLogin && (
             <div>
-              <label className="block text-sm font-medium text-text-secondary mb-1">
+              <label htmlFor="username" className="block text-sm font-medium text-text-secondary mb-1">
                 Username
               </label>
               <input
+                id="username"
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
@@ -107,10 +156,11 @@ export function AuthView() {
           )}
 
           <div>
-            <label className="block text-sm font-medium text-text-secondary mb-1">
+            <label htmlFor="email" className="block text-sm font-medium text-text-secondary mb-1">
               Email
             </label>
             <input
+              id="email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -121,10 +171,11 @@ export function AuthView() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-text-secondary mb-1">
+            <label htmlFor="password" className="block text-sm font-medium text-text-secondary mb-1">
               Password
             </label>
             <input
+              id="password"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -172,7 +223,7 @@ export function AuthView() {
 
         {/* Demo Info */}
         <div className="text-center text-xs text-text-muted">
-          <p>Backend required: Node.js + PostgreSQL</p>
+          <p>Backend required: Node.js + SQLite</p>
           <p className="mt-1">Run: cd backend && npm run dev</p>
         </div>
       </motion.div>

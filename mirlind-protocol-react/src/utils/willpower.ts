@@ -2,7 +2,6 @@ import type {
   CoreStats, 
   StatLastUsed, 
   WillpowerStatus,
-  WillpowerState,
   PillarType 
 } from '../types';
 import { 
@@ -104,7 +103,7 @@ export function applyWillpowerChange(
         change: action.value - current 
       };
     
-    case 'dailyReset':
+    case 'dailyReset': {
       // Natural regeneration during sleep
       const recovery = Math.floor(max * 0.3); // 30% recovery
       const newValue = Math.min(max, current + recovery);
@@ -113,6 +112,7 @@ export function applyWillpowerChange(
         change: newValue - current,
         message: `+${newValue - current} Willpower: Rest and recovery`
       };
+    }
     
     default:
       return { newValue: current, change: 0 };
@@ -387,7 +387,7 @@ export function getPassiveStatGainFromPillar(
 export function getStatTrainingOptions(stat: keyof CoreStats): Array<{ activity: string; gain: number; description: string }> {
   const options: Array<{ activity: string; gain: number; description: string }> = [];
   
-  Object.entries(ACTIVITY_STAT_GAINS).forEach(([key, data]) => {
+  Object.entries(ACTIVITY_STAT_GAINS).forEach(([, data]) => {
     const statGain = data.stats.find(s => s.stat === stat);
     if (statGain) {
       options.push({

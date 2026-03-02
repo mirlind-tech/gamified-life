@@ -52,7 +52,7 @@ export function KeyboardShortcutsHelp({ isOpen, onClose, shortcuts, formatKey }:
               <div className="mt-8 pt-6 border-t border-border text-center">
                 <button
                   onClick={onClose}
-                  className="px-6 py-2.5 bg-accent-purple hover:bg-accent-purple/80 text-white font-semibold rounded-lg transition-colors"
+                  className="px-6 py-2.5 bg-accent-purple-dark hover:bg-accent-purple-dark/80 text-white font-semibold rounded-lg transition-colors"
                 >
                   Got it! {EMOJIS.CHECK}
                 </button>

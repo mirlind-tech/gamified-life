@@ -28,3 +28,10 @@ export const saveProtocol = async (data: DailyProtocol): Promise<{ message: stri
 export const getProtocolStreak = async (): Promise<{ streak: number }> => {
   return apiRequest('/protocol/streak');
 };
+
+// Delete/Reset protocol for a specific date
+export const deleteProtocol = async (date: string): Promise<{ message: string }> => {
+  return apiRequest(`/protocol/${date}`, {
+    method: 'DELETE',
+  });
+};

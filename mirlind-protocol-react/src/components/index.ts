@@ -14,10 +14,13 @@ export { Confetti } from './Confetti';
 export { ErrorBoundary } from './ErrorBoundary';
 export { KeyboardShortcutsHelp } from './KeyboardShortcutsHelp';
 export { LevelUpModal } from './LevelUpModal';
-export { ParticleBackground } from './ParticleBackground';
 export { ProgressChart } from './ProgressChart';
 export { ProtocolHeatmap } from './ProtocolHeatmap';
 export { WorkoutHistory } from './WorkoutHistory';
+export { WeeklyScorecard } from './WeeklyScorecard';
+export { B1Countdown } from './B1Countdown';
+export { SavingsProgress } from './SavingsProgress';
+export { JobHuntTracker } from './JobHuntTracker';
 
 // Animation components
 export { FadeIn } from './animations/FadeIn';

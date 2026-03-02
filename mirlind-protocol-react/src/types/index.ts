@@ -225,10 +225,14 @@ export interface WillpowerState {
 }
 
 export type ViewType = 
+  | 'command'
+  | 'body'
+  | 'mind'
+  | 'career'
+  | 'finance'
+  | 'german'
   | 'tree' 
   | 'cards' 
-  | 'quests' 
-  | 'gates' 
   | 'analytics' 
   | 'achievements' 
   | 'focus' 
@@ -237,14 +241,23 @@ export type ViewType =
   | 'meditate' 
   | 'habits' 
   | 'coach'
-  | 'notifications'
   | 'challenges'
   | 'protocol'
-  | 'auth';
+  | 'auth'
+  | 'skills-roadmap'
+  | 'character-profile'
+  | 'fangyuan'
+  | 'tech-stack'
+  | 'photo-progress'
+  | 'charts'
+  | 'weekly-plan'
+  | 'weekly-review'
+  | 'assessment'
+  | 'insights';
 
 export interface Toast {
   id: string;
   message: string;
   duration: number;
-  type: 'success' | 'error' | 'warning' | 'default';
+  type: 'success' | 'error' | 'warning' | 'info' | 'default';
 }

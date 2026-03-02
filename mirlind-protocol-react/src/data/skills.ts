@@ -77,6 +77,18 @@ export function completeStage(skillId: string, stageIndex: number): void {
   }
 }
 
+// Abandon/cancel a skill (reset progress)
+export function abandonSkill(skillId: string): void {
+  const skills = getUserSkills();
+  const skill = skills.find(s => s.id === skillId);
+  if (skill) {
+    skill.started = undefined;
+    skill.currentStage = 0;
+    skill.completed = false;
+    saveUserSkills(skills);
+  }
+}
+
 // Get category color
 export function getCategoryColor(category: MasterySkill['category']): string {
   switch (category) {

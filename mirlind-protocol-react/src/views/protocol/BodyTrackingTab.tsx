@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
+import { TabTransition } from '../../components/animations';
 import { EMOJIS } from '../../utils/emojis';
 import { WorkoutHistory } from '../../components/WorkoutHistory';
 import * as bodyApi from '../../services/bodyApi';
@@ -52,12 +53,7 @@ export function BodyTrackingTab({
   const getProgress = (current: number, target: number) => Math.min(100, (current / target) * 100);
 
   return (
-    <motion.div
-      initial={{ opacity: 0, x: 20 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: -20 }}
-      className="space-y-6"
-    >
+    <TabTransition>
       {/* Baki Status Card */}
       <div className="glass-card rounded-2xl p-6 bg-linear-to-br from-accent-pink/10 to-transparent border border-accent-pink/30">
         <div className="flex items-center gap-4 mb-4">
@@ -92,7 +88,7 @@ export function BodyTrackingTab({
           <button
             onClick={onSaveMeasurements}
             disabled={isSavingMeasurements}
-            className="px-4 py-2 bg-accent-green rounded-lg text-white font-semibold text-sm hover:bg-accent-green/80 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            className="px-4 py-2 bg-accent-green-dark rounded-lg text-white font-semibold text-sm hover:bg-accent-green-dark/80 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
           >
             {isSavingMeasurements ? (
               <>
@@ -119,9 +115,10 @@ export function BodyTrackingTab({
             { key: 'height', label: 'Height', unit: 'cm', current: bodyStats.height, target: 170, color: 'text-text-secondary' },
           ].map((item) => (
             <div key={item.key} className="bg-bg-secondary/50 rounded-xl p-3">
-              <label className="text-xs text-text-muted uppercase">{item.label}</label>
+              <label htmlFor={`${item.key}-input`} className="text-xs text-text-muted uppercase">{item.label}</label>
               <div className="flex items-center gap-2 mt-1">
                 <input
+                  id={`${item.key}-input`}
                   type="number"
                   step={item.key === 'weight' ? 0.1 : 0.5}
                   value={bodyStats[item.key as keyof BodyStats] as number}
@@ -272,7 +269,7 @@ export function BodyTrackingTab({
           </h3>
           <button
             onClick={addExercise}
-            className="px-4 py-2 bg-accent-purple rounded-lg text-white font-semibold hover:bg-accent-purple/80"
+            className="px-4 py-2 bg-accent-purple-dark rounded-lg text-white font-semibold hover:bg-accent-purple-dark/80"
           >
             + Add Exercise
           </button>
@@ -282,7 +279,10 @@ export function BodyTrackingTab({
           <div key={idx} className="grid grid-cols-12 gap-2 mb-2 p-3 bg-bg-secondary/30 rounded-lg items-center">
             <div className="col-span-4">
               <input
+                id={`workout-exercise-name-${idx}`}
+                name={`workout_exercise_name_${idx}`}
                 type="text"
+                aria-label="Exercise name"
                 value={exercise.name}
                 onChange={(e) => {
                   const updated = [...bodyStats.workout!.exercises];
@@ -295,7 +295,10 @@ export function BodyTrackingTab({
             </div>
             <div className="col-span-2 flex items-center gap-1">
               <input
+                id={`workout-exercise-sets-${idx}`}
+                name={`workout_exercise_sets_${idx}`}
                 type="number"
+                aria-label="Sets"
                 value={exercise.sets}
                 onChange={(e) => {
                   const updated = [...bodyStats.workout!.exercises];
@@ -308,7 +311,10 @@ export function BodyTrackingTab({
             </div>
             <div className="col-span-2 flex items-center gap-1">
               <input
+                id={`workout-exercise-reps-${idx}`}
+                name={`workout_exercise_reps_${idx}`}
                 type="number"
+                aria-label="Reps"
                 value={exercise.reps}
                 onChange={(e) => {
                   const updated = [...bodyStats.workout!.exercises];
@@ -321,7 +327,10 @@ export function BodyTrackingTab({
             </div>
             <div className="col-span-2 flex items-center gap-1">
               <input
+                id={`workout-exercise-weight-${idx}`}
+                name={`workout_exercise_weight_${idx}`}
                 type="number"
+                aria-label="Weight kg"
                 value={exercise.weight}
                 onChange={(e) => {
                   const updated = [...bodyStats.workout!.exercises];
@@ -351,7 +360,7 @@ export function BodyTrackingTab({
             <button
               onClick={onSaveWorkout}
               disabled={isSavingWorkout}
-              className="w-full py-3 bg-accent-green rounded-lg text-white font-semibold hover:bg-accent-green/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="w-full py-3 bg-accent-green-dark rounded-lg text-white font-semibold hover:bg-accent-green-dark/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               {isSavingWorkout ? (
                 <>
@@ -406,6 +415,6 @@ export function BodyTrackingTab({
           ))}
         </div>
       </div>
-    </motion.div>
+    </TabTransition>
   );
 }

@@ -1,11 +1,12 @@
 import { useReducer, useCallback, useEffect, useState, type ReactNode } from 'react';
-import type { PlayerStats, ViewType, Toast, ActivityStats } from '../types';
-import * as authApi from '../services/authApi';
+import type { PlayerStats, ViewType, Toast, ActivityStats, PillarType } from '../types';
 import { logger } from '../utils/logger';
-import { removeToken } from '../services/authApi';
 import * as playerApi from '../services/playerApi';
 import { transformUserToPlayer, transformBackendStatsToPlayer } from './gameHelpers';
 import { GameContext, type GameAction } from './gameTypes';
+import { useAuth } from '../contexts/useAuth';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { pathToView, viewToPath } from '../routing/viewRoutes';
 import { 
   applyWillpowerChange, 
   calculateAllStatDecay,
@@ -98,7 +99,10 @@ interface GameState {
   username: string | null;
 }
 
-
+function getInitialViewFromPath(): ViewType {
+  if (typeof window === 'undefined') return 'command';
+  return pathToView(window.location.pathname);
+}
 
 function gameReducer(state: GameState, action: GameAction): GameState {
   switch (action.type) {
@@ -143,7 +147,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           willpower: Math.max(0, Math.min(state.player.maxWillpower, action.payload.value)),
         },
       };
-    case 'APPLY_STAT_DECAY':
+    case 'APPLY_STAT_DECAY': {
       const newCoreStats = { ...state.player.coreStats };
       action.payload.decayResults.forEach(({ stat, newValue }) => {
         newCoreStats[stat] = newValue;
@@ -156,6 +160,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           lastDecayCheck: new Date().toISOString(),
         },
       };
+    }
     case 'EXERCISE_STAT':
       return {
         ...state,
@@ -167,7 +172,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           },
         },
       };
-    case 'DAILY_RESET':
+    case 'DAILY_RESET': {
       // Natural willpower regeneration (30% of max)
       const recovery = Math.floor(state.player.maxWillpower * 0.3);
       return {
@@ -177,7 +182,8 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           willpower: Math.min(state.player.maxWillpower, state.player.willpower + recovery),
         },
       };
-    case 'GAIN_STATS':
+    }
+    case 'GAIN_STATS': {
       const gainedStats = { ...state.player.coreStats };
       action.payload.gains.forEach(({ stat, amount }) => {
         gainedStats[stat] = Math.min(60, gainedStats[stat] + amount);
@@ -189,7 +195,8 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           coreStats: gainedStats,
         },
       };
-    case 'PILLAR_LEVEL_STAT_GAIN':
+    }
+    case 'PILLAR_LEVEL_STAT_GAIN': {
       const pillarGains = getPassiveStatGainFromPillar(action.payload.pillar, action.payload.newLevel);
       const newStatsAfterPillar = { ...state.player.coreStats };
       pillarGains.forEach(({ stat, amount }) => {
@@ -202,6 +209,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           coreStats: newStatsAfterPillar,
         },
       };
+    }
     default:
       return state;
   }
@@ -214,9 +222,12 @@ function gameReducer(state: GameState, action: GameAction): GameState {
 // ============================================================================
 
 export function GameProvider({ children }: { children: ReactNode }) {
+  const navigate = useNavigate();
+  const location = useLocation();
+
   const [state, dispatch] = useReducer(gameReducer, {
     player: createInitialPlayerState(),
-    currentView: 'tree',
+    currentView: getInitialViewFromPath(),
     toasts: [],
     isLoading: true,
     isAuthenticated: false,
@@ -237,7 +248,19 @@ export function GameProvider({ children }: { children: ReactNode }) {
   // View helper
   const setView = useCallback((view: ViewType) => {
     dispatch({ type: 'SET_VIEW', payload: view });
-  }, []);
+    const nextPath = viewToPath(view);
+    if (location.pathname !== nextPath) {
+      navigate(nextPath);
+    }
+  }, [location.pathname, navigate]);
+
+  // Keep view state synced with browser navigation (back/forward and deep links)
+  useEffect(() => {
+    const routeView = pathToView(location.pathname);
+    if (routeView !== state.currentView) {
+      dispatch({ type: 'SET_VIEW', payload: routeView });
+    }
+  }, [location.pathname, state.currentView]);
 
   // Track activity - syncs with API if authenticated, otherwise local only
   const trackActivity = useCallback(async (type: keyof ActivityStats, value: number) => {
@@ -396,89 +419,46 @@ export function GameProvider({ children }: { children: ReactNode }) {
     checkAndApplyDecay();
   }, [checkAndApplyDecay]);
 
-  // Auth: Login
-  const login = useCallback(async (email: string, password: string) => {
-    try {
-      const response = await authApi.login({ email, password });
-      authApi.setToken(response.token);
-      dispatch({ type: 'SET_AUTH', payload: { isAuthenticated: true, username: response.user.username } });
-      // User data will be loaded from localStorage via transformUserToPlayer
-      const playerData = transformUserToPlayer(response.user);
-      dispatch({ type: 'SET_PLAYER', payload: playerData });
-      setUseLocalStorage(false);
-      showToast(`Welcome back, ${response.user.username}!`, 'success');
-    } catch (err) {
-      showToast((err as Error).message || 'Login failed', 'error');
-      throw err;
-    }
-  }, [showToast]);
-
-  // Auth: Register
-  const register = useCallback(async (email: string, password: string, username: string) => {
-    try {
-      const response = await authApi.register({ email, username, password });
-      authApi.setToken(response.token);
-      dispatch({ type: 'SET_AUTH', payload: { isAuthenticated: true, username } });
-      const playerData = transformUserToPlayer(response.user);
-      dispatch({ type: 'SET_PLAYER', payload: playerData });
-      setUseLocalStorage(false);
-      showToast(`Welcome, ${username}! Your journey begins now.`, 'success');
-    } catch (err: unknown) {
-      showToast((err as Error).message || 'Registration failed', 'error');
-      throw err;
-    }
-  }, [showToast]);
-
-  // Auth: Logout
-  const logout = useCallback(() => {
-    removeToken();
-    dispatch({ type: 'SET_AUTH', payload: { isAuthenticated: false, username: null } });
-    dispatch({ type: 'SET_PLAYER', payload: createInitialPlayerState() });
-    setUseLocalStorage(true);
-    showToast('Logged out successfully', 'default');
-  }, [showToast]);
-
-  // Load data on mount
-  useEffect(() => {
-    const loadFromLocalStorage = () => {
-      const saved = localStorage.getItem('mirlind-protocol-save');
-      if (saved) {
-        try {
-          const parsed = JSON.parse(saved);
-          dispatch({ type: 'SET_PLAYER', payload: { ...createInitialPlayerState(), ...parsed } });
-        } catch (e) {
-          logger.error('Failed to parse saved data:', e);
-        }
+  // Helper function to load from localStorage
+  const loadFromLocalStorage = useCallback(() => {
+    const saved = localStorage.getItem('mirlind-protocol-save');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        dispatch({ type: 'SET_PLAYER', payload: { ...createInitialPlayerState(), ...parsed } });
+      } catch (e) {
+        logger.error('Failed to parse saved data:', e);
       }
-    };
+    }
+  }, []);
 
+  // Load data when auth state changes (single source of truth)
+  const { user: authUser, isLoading: authLoading } = useAuth();
+  
+  useEffect(() => {
+    if (authLoading) return; // Wait for auth to finish
+    
     const loadData = async () => {
       try {
-        // Check if we have a token
-        if (authApi.getToken()) {
+        if (authUser) {
+          // User is authenticated - load from backend
+          dispatch({ type: 'SET_AUTH', payload: { isAuthenticated: true, username: authUser.username } });
+          
           try {
-            const { user } = await authApi.getCurrentUser();
-            dispatch({ type: 'SET_AUTH', payload: { isAuthenticated: true, username: user.username } });
-            
-            // Load player stats from backend
-            try {
-              const statsResult = await playerApi.getPlayerStats();
-              const playerData = transformBackendStatsToPlayer(statsResult.stats);
-              dispatch({ type: 'SET_PLAYER', payload: playerData });
-            } catch (statsError) {
-              logger.error('Failed to load player stats:', statsError);
-              // Fall back to user data
-              dispatch({ type: 'SET_PLAYER', payload: transformUserToPlayer(user) });
-            }
-            
-            setUseLocalStorage(false);
-          } catch {
-            // Token invalid, fall back to localStorage
-            removeToken();
-            loadFromLocalStorage();
+            const statsResult = await playerApi.getPlayerStats();
+            const playerData = transformBackendStatsToPlayer(statsResult.stats);
+            dispatch({ type: 'SET_PLAYER', payload: playerData });
+          } catch (statsError) {
+            logger.error('Failed to load player stats:', statsError);
+            dispatch({ type: 'SET_PLAYER', payload: transformUserToPlayer(authUser) });
           }
+          
+          setUseLocalStorage(false);
         } else {
+          // Not authenticated - load from localStorage
+          dispatch({ type: 'SET_AUTH', payload: { isAuthenticated: false, username: null } });
           loadFromLocalStorage();
+          setUseLocalStorage(true);
         }
       } catch (e) {
         logger.error('Failed to load data:', e);
@@ -488,7 +468,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
     };
 
     loadData();
-  }, []);
+  }, [authUser, authLoading, loadFromLocalStorage]);
 
   // Auto-save to localStorage when in offline mode
   useEffect(() => {
@@ -528,9 +508,6 @@ export function GameProvider({ children }: { children: ReactNode }) {
       setView, 
       showToast, 
       trackActivity, 
-      login, 
-      register, 
-      logout,
       addXP,
       // Willpower & Decay
       modifyWillpower,

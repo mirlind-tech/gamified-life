@@ -37,19 +37,34 @@ export function fireConfetti(options: ConfettiOptions = {}) {
     canvas.id = 'confetti-canvas';
     canvas.setAttribute('aria-hidden', 'true');
     canvas.setAttribute('role', 'presentation');
-    canvas.style.cssText = 'position: fixed; top: 0; left: 0; pointer-events: none; z-index: 9999;';
-    // Append to main element if it exists, otherwise body
-    const mainElement = document.querySelector('main');
-    if (mainElement) {
-      mainElement.appendChild(canvas);
+    
+    // Append to the dedicated container inside main landmark
+    const container = document.getElementById('confetti-container');
+    if (container) {
+      canvas.style.cssText = 'position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none;';
+      container.appendChild(canvas);
     } else {
-      document.body.appendChild(canvas);
+      // Fallback: append to main element or body
+      canvas.style.cssText = 'position: fixed; top: 0; left: 0; pointer-events: none; z-index: 9999;';
+      const mainElement = document.querySelector('main');
+      if (mainElement) {
+        mainElement.appendChild(canvas);
+      } else {
+        document.body.appendChild(canvas);
+      }
     }
   }
 
   const ctx = canvas.getContext('2d')!;
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
+  // Use container dimensions if inside container, otherwise window dimensions
+  const container = document.getElementById('confetti-container');
+  if (container) {
+    canvas.width = container.clientWidth;
+    canvas.height = container.clientHeight;
+  } else {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
 
   const particles: Particle[] = [];
 

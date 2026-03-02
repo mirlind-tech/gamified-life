@@ -51,15 +51,12 @@ export function AchievementsView() {
               relative p-6 rounded-2xl border-2 transition-all
               ${achievement.unlocked 
                 ? rarityColors[achievement.rarity]
-                : 'bg-bg-card border-border opacity-50 grayscale'
+                : 'bg-black/20 border-border'
               }
             `}
           >
-            <div className="flex items-start gap-4">
-              <div className={`
-                w-16 h-16 rounded-xl flex items-center justify-center text-4xl
-                ${achievement.unlocked ? 'bg-black/30' : 'bg-black/30'}
-              `}>
+            <div className={`flex items-start gap-4 ${!achievement.unlocked ? 'grayscale' : ''}`}>
+              <div className="w-16 h-16 rounded-xl flex items-center justify-center text-4xl bg-black/30">
                 {achievement.icon}
               </div>
               <div className="flex-1">
@@ -68,16 +65,18 @@ export function AchievementsView() {
                     text-xs px-2 py-0.5 rounded-full uppercase font-bold
                     ${achievement.unlocked 
                       ? 'bg-white/20 text-white' 
-                      : 'bg-text-muted/20 text-text-muted'
+                      : 'bg-text-secondary/30 text-text-secondary'
                     }
                   `}>
                     {achievement.rarity}
                   </span>
                   {achievement.unlocked && (
-                    <span className="text-accent-green text-sm">{EMOJIS.CHECK}</span>
+                    <span className="text-accent-green-dark text-sm">{EMOJIS.CHECK}</span>
                   )}
                 </div>
-                <h3 className="text-lg font-bold text-text-primary mb-1">{achievement.name}</h3>
+                <h3 className={`text-lg font-bold mb-1 ${achievement.unlocked ? 'text-text-primary' : 'text-text-secondary'}`}>
+                  {achievement.name}
+                </h3>
                 <p className="text-sm text-text-secondary">{achievement.description}</p>
               </div>
             </div>

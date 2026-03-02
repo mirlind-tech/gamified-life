@@ -1,8 +1,10 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useGame } from '../store/useGame';
+import { useAuth } from '../contexts/useAuth';
 import type { ViewType } from '../types';
 import { EMOJIS } from '../utils/emojis';
 import { motion } from 'framer-motion';
+import { calculateCoreStats } from '../utils/coreStats';
 
 interface NavItem {
   id: ViewType;
@@ -11,19 +13,36 @@ interface NavItem {
   shortcut: string;
 }
 
-const navItems: NavItem[] = [
-  { id: 'protocol', icon: EMOJIS.SCROLL, label: 'Protocol', shortcut: 'P' },
-  { id: 'challenges', icon: EMOJIS.CHALLENGE, label: 'Challenges', shortcut: 'D' },
-  { id: 'analytics', icon: EMOJIS.USER, label: 'Profile', shortcut: '5' },
-  { id: 'achievements', icon: EMOJIS.ACHIEVEMENTS, label: 'Achievements', shortcut: '6' },
-  { id: 'tree', icon: EMOJIS.TREE, label: 'Skills', shortcut: '1' },
-  { id: 'focus', icon: EMOJIS.FOCUS, label: 'Focus', shortcut: '7' },
-  { id: 'journal', icon: EMOJIS.JOURNAL, label: 'Journal', shortcut: '8' },
-  { id: 'education', icon: EMOJIS.EDUCATION, label: 'Learn', shortcut: '9' },
-  { id: 'meditate', icon: EMOJIS.MEDITATE, label: 'Meditate', shortcut: '0' },
-  { id: 'habits', icon: EMOJIS.HABITS, label: 'Habits', shortcut: 'H' },
-  { id: 'coach', icon: EMOJIS.COACH, label: 'AI Coach', shortcut: 'C' },
-  { id: 'auth', icon: EMOJIS.LOCK, label: 'Account', shortcut: 'A' },
+interface NavSectionConfig {
+  title: string;
+  items: NavItem[];
+}
+
+const navSections: NavSectionConfig[] = [
+  {
+    title: 'CORE JOURNEY',
+    items: [
+      { id: 'command', icon: EMOJIS.SCROLL, label: 'Command Center', shortcut: 'O' },
+      { id: 'body', icon: EMOJIS.VESSEL, label: 'Body (Baki)', shortcut: 'B' },
+      { id: 'mind', icon: EMOJIS.BRAIN, label: 'Mind (Fang Yuan)', shortcut: 'M' },
+      { id: 'career', icon: EMOJIS.CODE, label: 'Career (Code)', shortcut: 'R' },
+      { id: 'finance', icon: EMOJIS.CAPITAL, label: 'Finance', shortcut: 'F' },
+      { id: 'german', icon: EMOJIS.FLAG, label: 'German', shortcut: 'G' },
+      { id: 'coach', icon: EMOJIS.COACH, label: 'AI Coach', shortcut: 'C' },
+    ],
+  },
+  {
+    title: 'OVERVIEW',
+    items: [
+      { id: 'analytics', icon: EMOJIS.USER, label: 'Profile', shortcut: 'U' },
+    ],
+  },
+  {
+    title: 'SYSTEM',
+    items: [
+      { id: 'auth', icon: EMOJIS.LOCK, label: 'Account', shortcut: 'A' },
+    ],
+  },
 ];
 
 export function Sidebar() {
@@ -39,14 +58,18 @@ export function Sidebar() {
 
   return (
     <>
-      {/* Mobile toggle button */}
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="lg:hidden fixed top-4 left-4 z-50 p-2 bg-bg-secondary/80 border border-border rounded-lg backdrop-blur-sm"
-        aria-label={isOpen ? 'Close menu' : 'Open menu'}
+      {/* Mobile toggle button - hidden when sidebar is open */}
+      <motion.button
+        onClick={() => setIsOpen(true)}
+        className="lg:hidden fixed top-4 left-4 z-50 p-2.5 bg-bg-secondary/90 border border-border rounded-xl backdrop-blur-sm shadow-lg"
+        aria-label="Open menu"
+        initial={false}
+        animate={{ opacity: isOpen ? 0 : 1, scale: isOpen ? 0.8 : 1 }}
+        transition={{ duration: 0.2 }}
+        style={{ pointerEvents: isOpen ? 'none' : 'auto' }}
       >
-        <span className="text-xl">{isOpen ? '✕' : '☰'}</span>
-      </button>
+        <span className="text-lg">☰</span>
+      </motion.button>
 
       {/* Mobile overlay */}
       {isOpen && (
@@ -67,21 +90,122 @@ export function Sidebar() {
         aria-label="Main navigation"
       >
         {/* Mobile header */}
-        <div className="lg:hidden flex items-center justify-between p-4 border-b border-border">
-          <span className="text-lg font-bold text-gradient">Protocol</span>
-          <button onClick={() => setIsOpen(false)} className="p-1">
-            <span className="text-xl">✕</span>
-          </button>
+        <div className="lg:hidden flex items-center justify-between p-4 border-b border-border/50">
+          <div className="flex items-center gap-2">
+            <span className="text-2xl">👑</span>
+            <span className="text-lg font-bold bg-linear-to-r from-accent-purple to-accent-cyan bg-clip-text text-transparent">Protocol</span>
+          </div>
+          <motion.button 
+            onClick={() => setIsOpen(false)} 
+            className="p-2 rounded-lg hover:bg-white/5 transition-colors"
+            whileTap={{ scale: 0.95 }}
+            aria-label="Close menu"
+          >
+            <span className="text-xl text-text-secondary hover:text-text-primary transition-colors">✕</span>
+          </motion.button>
         </div>
 
+        {/* Mini Character Profile */}
+        <MiniProfile />
+
         <nav className="flex-1 p-4 space-y-6 overflow-y-auto" tabIndex={0}>
-          <NavSection title="MAIN" items={navItems.slice(0, 4)} currentView={currentView} onSelect={handleSelectView} />
-          <NavSection title="SKILLS" items={navItems.slice(4, 5)} currentView={currentView} onSelect={handleSelectView} />
-          <NavSection title="GROWTH" items={navItems.slice(5, 11)} currentView={currentView} onSelect={handleSelectView} />
-          <NavSection title="SETTINGS" items={navItems.slice(11)} currentView={currentView} onSelect={handleSelectView} />
+          {navSections.map(section => (
+            <NavSection
+              key={section.title}
+              title={section.title}
+              items={section.items}
+              currentView={currentView}
+              onSelect={handleSelectView}
+            />
+          ))}
         </nav>
       </aside>
     </>
+  );
+}
+
+// Mini Character Profile Component for Sidebar
+function MiniProfile() {
+  const { state, setView } = useGame();
+  const { player } = state;
+  const { user } = useAuth();
+
+  const level = Math.floor((player?.totalXPEarned || 0) / 1000) + 1;
+  const xp = (player?.totalXPEarned || 0) % 1000;
+  const xpPercent = (xp / 1000) * 100;
+
+  // Calculate core stats using same logic as CharacterProfileView
+  const coreStats = useMemo(() => calculateCoreStats(player), [player]);
+
+  // Calculate total power from core stats
+  const totalPower = useMemo(() => {
+    return Object.values(coreStats).reduce((sum, val) => sum + val, 0);
+  }, [coreStats]);
+
+  // Get dominant stat for avatar
+  const dominantStat = useMemo(() => {
+    const entries = Object.entries(coreStats);
+    return entries.reduce((max, [key, val]) => val > max[1] ? [key, val] : max, entries[0])[0];
+  }, [coreStats]);
+
+  // Get display name - prefer username from auth, then player name, then fallback
+  const displayName = user?.username || (player?.name && player.name !== 'Unnamed Warrior' ? player.name : 'Novice Seeker');
+
+  const avatars: Record<string, string> = {
+    strength: '💪',
+    intelligence: '🧠',
+    wisdom: '🔮',
+    agility: '⚡',
+    charisma: '🗣️',
+    constitution: '❤️',
+    discipline: '⛓️',
+    creativity: '✨',
+  };
+
+  return (
+    <motion.button
+      type="button"
+      initial={{ opacity: 0, y: -10 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="w-full px-4 py-3 border-b border-border/50 cursor-pointer hover:bg-white/5 transition-colors text-left"
+      onClick={() => setView('analytics')}
+      aria-label="Open profile dashboard"
+    >
+      <div className="flex items-center gap-3">
+        {/* Avatar */}
+        <div className="relative">
+          <div className="w-12 h-12 rounded-full bg-linear-to-br from-accent-purple/30 to-accent-cyan/30 flex items-center justify-center text-2xl border border-border">
+            {avatars[dominantStat] || '🎭'}
+          </div>
+          {/* Level badge */}
+          <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-accent-purple text-white text-xs font-bold flex items-center justify-center border border-bg-secondary">
+            {level}
+          </div>
+        </div>
+
+        {/* Info */}
+        <div className="flex-1 min-w-0">
+          <p className="font-semibold text-text-primary text-sm truncate">
+            {displayName}
+          </p>
+          <div className="flex items-center gap-2 mt-0.5">
+            <div className="flex-1 h-1.5 bg-black/40 rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-accent-purple rounded-full transition-all"
+                style={{ width: `${xpPercent}%` }}
+              />
+            </div>
+            <span className="text-xs text-text-muted">{xp}/1000</span>
+          </div>
+        </div>
+
+        {/* Power */}
+        <div className="text-right">
+          <p className="text-xs text-text-muted">PWR</p>
+          <p className="text-lg font-bold text-accent-cyan">{totalPower}</p>
+        </div>
+      </div>
+    </motion.button>
   );
 }
 

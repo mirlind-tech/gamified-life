@@ -36,20 +36,15 @@ export function useKeyboardShortcuts(
   // Initialize shortcuts once
   useEffect(() => {
     const defaultShortcuts: Shortcut[] = [
-      { key: '1', description: 'Switch to Tree view', handler: () => onSwitchViewRef.current('tree') },
-      { key: '2', description: 'Switch to Cards view', handler: () => onSwitchViewRef.current('cards') },
-      { key: '3', description: 'Switch to Quests view', handler: () => onSwitchViewRef.current('quests') },
-      { key: '4', description: 'Switch to Gates view', handler: () => onSwitchViewRef.current('gates') },
-      { key: '5', description: 'Switch to Analytics view', handler: () => onSwitchViewRef.current('analytics') },
-      { key: '6', description: 'Switch to Achievements view', handler: () => onSwitchViewRef.current('achievements') },
-      { key: '7', description: 'Switch to Focus Timer', handler: () => onSwitchViewRef.current('focus') },
-      { key: '8', description: 'Switch to Journal', handler: () => onSwitchViewRef.current('journal') },
-      { key: '9', description: 'Switch to Education', handler: () => onSwitchViewRef.current('education') },
-      { key: '0', description: 'Switch to Meditation', handler: () => onSwitchViewRef.current('meditate') },
+      { key: 'o', description: 'Switch to Command Center', handler: () => onSwitchViewRef.current('command') },
+      { key: 'b', description: 'Switch to Body', handler: () => onSwitchViewRef.current('body') },
+      { key: 'm', description: 'Switch to Mind', handler: () => onSwitchViewRef.current('mind') },
+      { key: 'r', description: 'Switch to Career', handler: () => onSwitchViewRef.current('career') },
+      { key: 'f', description: 'Switch to Finance', handler: () => onSwitchViewRef.current('finance') },
+      { key: 'g', description: 'Switch to German', handler: () => onSwitchViewRef.current('german') },
       { key: 'c', description: 'Switch to AI Coach', handler: () => onSwitchViewRef.current('coach') },
-      { key: 'h', description: 'Switch to Habits', handler: () => onSwitchViewRef.current('habits') },
-      { key: 'd', description: 'Switch to Daily Challenges', handler: () => onSwitchViewRef.current('challenges') },
-      { key: 'n', description: 'Notification Settings', handler: () => onSwitchViewRef.current('notifications') },
+      { key: 'u', description: 'Switch to Profile', handler: () => onSwitchViewRef.current('analytics') },
+      { key: 'a', description: 'Switch to Account', handler: () => onSwitchViewRef.current('auth') },
       { key: '?', description: 'Show keyboard shortcuts', handler: () => setShowHelp(true), shift: true },
       { key: 'Escape', description: 'Close modals / Go back', handler: () => {
         if (onCloseModalRef.current) onCloseModalRef.current();

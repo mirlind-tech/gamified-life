@@ -37,10 +37,10 @@ export const updatePlayerStats = async (stats: Partial<PlayerStats>): Promise<{ 
   });
 };
 
-export const addXP = async (amount: number, type?: string, skillId?: string): Promise<AddXPResponse> => {
+export const addXP = async (amount: number, pillar?: string, skillId?: string): Promise<AddXPResponse> => {
   return apiRequest<AddXPResponse>('/player/add-xp', {
     method: 'POST',
-    body: JSON.stringify({ amount, type, skillId }),
+    body: JSON.stringify({ amount, pillar, skillId }),
   });
 };
 

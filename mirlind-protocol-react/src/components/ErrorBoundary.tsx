@@ -1,4 +1,6 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react';
+import { logger } from '../utils/logger';
+import { captureError } from '../utils/telemetry';
 
 interface Props {
   children: ReactNode;
@@ -20,7 +22,8 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error('Uncaught error:', error, errorInfo);
+    logger.error('Uncaught error:', error, errorInfo);
+    void captureError(error, { componentStack: errorInfo.componentStack });
   }
 
   public render() {
@@ -40,7 +43,7 @@ export class ErrorBoundary extends Component<Props, State> {
             )}
             <button
               onClick={() => window.location.reload()}
-              className="px-6 py-2 bg-accent-purple hover:bg-accent-purple/80 text-white font-semibold rounded-lg transition-colors"
+              className="px-6 py-2 bg-accent-purple-dark hover:bg-accent-purple-dark/80 text-white font-semibold rounded-lg transition-colors"
             >
               Refresh Page
             </button>
