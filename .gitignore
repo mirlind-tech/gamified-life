@@ -39,3 +39,4 @@ Thumbs.db
 
 # Build outputs
 *.tsbuildinfo
+target/

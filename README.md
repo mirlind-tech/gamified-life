@@ -1,182 +1,184 @@
 # Gamified Life - Mirlind Protocol
 
-> *"Become the strongest version of yourself"*
+> *"Level up your life with ruthless execution."*
 
-**⚠️ ATTENTION:** This is NOT a public app. This is your **PERSONAL TRANSFORMATION COMMAND CENTER**.
-
----
-
-## 🎯 YOUR MISSION
-
-Transform yourself into:
-- 💪 **Baki Hanma's physique**
-- 🧠 **Fang Yuan's mindset**
-- 💻 **Employable software engineer**
-- 🇩🇪 **German citizen**
-- 💰 **Financially independent**
-
-**Timeline:** 9 months (Feb - Oct 2026)  
-**Critical Deadline:** September 2026 (Job or crisis)  
-**Final Checkpoint:** December 31, 2026
+**Single-user build:** this app is currently designed for you only.
 
 ---
 
-## 🚀 Quick Start
+## Mission
+
+Transform into:
+- **Fang Yuan-level decision discipline**
+- **Baki-level physical capability**
+- **Job-ready software engineer**
+- **German-speaking professional in Stuttgart**
+- **Financially stable and growing**
+
+Priority order (current):
+1. Job ready
+2. Finance
+3. Coding depth
+4. Body
+5. German
+
+---
+
+## Current Reality (Source of Truth)
+
+- **Work block:** 06:50-16:30 (construction)
+- **Income:** EUR 2,000/month
+- **Fixed costs:** EUR 1,447/month
+  - Rent 620
+  - Phone + internet 70
+  - Gym 32
+  - Laptop insurance 5
+  - AI subscription 20
+  - Kosovo apartment 700 (started January 2026, 10-year commitment)
+- **Food budget:** EUR 320/month
+- **Savings capacity:** EUR 233/month
+- **Current savings:** EUR 1,400
+- **Savings target:** EUR 6,000 by **August 31, 2027** (aggressive realistic path)
+
+---
+
+## Quick Start
 
 ```bash
-# 1. Install dependencies
-cd backend && npm install
-cd ../mirlind-protocol-react && npm install
+# 1. Start infrastructure
+docker compose up -d postgres redis
 
-# 2. Start backend
-cd backend && npm start
+# 2. Start the Rust gateway
+cargo run -p gateway
 
-# 3. Start frontend (new terminal)
-cd mirlind-protocol-react && npm run dev
+# 3. Start the Next.js app (new terminal)
+cd apps/web && npm install && npm run dev
 ```
 
-**URLs:**
-- Frontend: http://localhost:5173
-- Backend Health: http://localhost:3001/api/health
-
-### Environment Setup
-
-**backend/.env:**
-```env
-DATABASE_URL=postgresql://postgres:password123@localhost:5432/mirlind_protocol
-JWT_SECRET=your-secret-key-min-32-chars
-PORT=3001
-```
-
-**mirlind-protocol-react/.env:**
-```env
-VITE_API_URL=http://localhost:3001/api
-```
+URLs:
+- Frontend: `http://localhost:3003`
+- Gateway health: `http://localhost:3000/health`
+- Gateway API base: `http://localhost:3000/api`
+- Postgres: `postgres://postgres:postgres@localhost:5432/mirlind`
+- Redis: `redis://localhost:6379`
 
 ---
 
-## 📱 What This App Tracks
+## Login Troubleshooting
+
+If login shows a connectivity error:
+
+1. Ensure Postgres and Redis are running: `docker compose up -d postgres redis`.
+2. Ensure the gateway is running: `cargo run -p gateway`.
+3. Verify the gateway health endpoint opens: `http://localhost:3000/health`.
+4. Confirm frontend gateway URL in `apps/web/.env`:
+   `NEXT_PUBLIC_GATEWAY_URL=http://127.0.0.1:3000`.
+5. Start the Next app from `apps/web` and open `http://localhost:3003`.
+
+---
+
+## Daily Execution Template
+
+```text
+05:15 - Wake (no snooze)
+05:20-05:50 - German (Anki + speaking)
+05:50-06:20 - Breakfast + prep
+06:20-06:50 - Commute
+06:50-16:30 - Work (audio German + micro-review in breaks)
+17:30-18:45 - Gym (4x/week) OR active recovery
+19:30-21:30 - Job-ready coding deep work
+21:30-22:00 - Short review + next-day setup
+22:15 - Sleep target
+```
+
+Rule: app usage should stay under 10 minutes/day outside scheduled reviews.
+
+---
+
+## Critical Milestones
+
+| Date | Target |
+|------|--------|
+| **July 31, 2026** | 60 applications, 8 interviews in pipeline |
+| **December 31, 2026** | Savings around EUR 3,700+, stronger portfolio output |
+| **August 31, 2027** | EUR 6,000 safety buffer complete |
+
+---
+
+## What the App Tracks
 
 | Module | Tracks |
 |--------|--------|
-| **💪 Body** | Workouts, weight, measurements, photos, nutrition |
-| **🧠 Mind** | Daily discipline, Fang Yuan principles, reflections |
-| **🇩🇪 German** | Anki stats, Language Transfer, B1 countdown |
-| **💻 Code** | GitHub commits, coding hours, skills checklist |
-| **💰 Capital** | Expenses, budget, savings progress |
-| **📋 Protocol** | Daily routine completion, wake time, gym, sleep |
-| **🎓 Skills** | Real-world skills (backflip, guitar, etc.) |
-| **🏆 Challenges** | 7-day and 30-day competitive challenges |
+| **Body** | Workouts, measurements, progress checkpoints |
+| **Mind** | Discipline reflection and weekly review |
+| **German** | Anki, lessons, listening/output consistency |
+| **Code** | Hours, output, job-ready project progress |
+| **Finance** | Expenses, editable budget inputs, savings runway |
+| **Protocol** | Daily execution and consistency |
 
 ---
 
-## 📅 YOUR DAILY SCHEDULE
+## Core Execution Loop
 
-```
-05:00 - WAKE (No snooze)
-05:00-05:30 - Anki 50 cards + Speak German
-05:30-06:00 - Language Transfer (1 lesson)
-06:00-06:30 - Breakfast (600kcal)
-06:30-17:00 - Construction work + German radio
-17:30-18:30 - GYM (Baki Protocol)
-18:30-19:00 - Cold shower + commute
-19:00-19:30 - Dinner (high protein)
-19:30-21:30 - CODE BLOCK (Deep work)
-21:30-22:00 - Easy German / Anki catch-up
-22:00 - HARD SLEEP (Phone in kitchen)
-```
+1. **Weekly Plan** (`/weekly-plan`)  
+Set objectives + daily actions for the week.
 
-**Total:** 2 hours German, 2 hours code, 1 hour gym daily
+2. **Daily Execution** (`/protocol`)  
+Complete actions, check in, and keep output moving.
 
----
+3. **Weekly Review** (`/weekly-review`)  
+Log wins/failures/lessons; next week targets auto-adjust.
 
-## 🎯 CRITICAL DEADLINES
+4. **Adaptive Assessment** (`/assessment`)  
+Baseline capacity sets difficulty factor for sustainable intensity.
 
-| Date | Target | Risk if Missed |
-|------|--------|----------------|
-| **Apr 30** | A1 German, App v1, €2,809 saved | Fall behind schedule |
-| **Jun 1** | Start job applications | Run out of money |
-| **Aug 31** | Project 100%, Portfolio done | No job offers |
-| **Sep 30** | **JOB STARTED** | Financial crisis |
-| **Dec 31** | B1 Certificate, €5,233, Transformation complete | Visa issues |
+5. **Insights** (`/insights`)  
+Track adherence/output/outcome trends and week-change insights.
 
 ---
 
-## 📂 Documentation
+## AI Action Mode
+
+`AI Coach` now supports **Action Mode**:
+- Generate concrete actions from intent
+- Apply actions directly to weekly objectives and daily action lists
+- Apply finance caps when finance actions are generated
+
+---
+
+## Backup / Export
+
+From `Account`, use **Backup / Export Data** to download your full user dataset as JSON.
+
+---
+
+## Retention Safeguards
+
+- Daily reminder window (configurable in Insights)
+- Missed-day recovery plan
+- Minimum viable day mode to prevent streak collapse
+
+---
+
+## Weekly Score Rule
+
+Weekly scorecard uses 6 categories (max 60 total points).
+
+- **Minimum pass target:** 48+/60
+- **Goal zone:** 54+/60
+
+---
+
+## Documentation
 
 | Document | Purpose |
 |----------|---------|
-| **[docs/TRANSFORMATION.md](docs/TRANSFORMATION.md)** | Complete 9-month blueprint: gym protocol, German learning, coding roadmap, financial survival |
-| **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** | Technical documentation: project structure, backend API, component organization |
-| **[docs/REFACTORING.md](docs/REFACTORING.md)** | What changed: security fixes, modularization, migration guide |
-| **[FEATURES_SUMMARY.md](FEATURES_SUMMARY.md)** | App features overview: Skills, Challenges, Mindset system |
-| **[backend/README.md](backend/README.md)** | Backend API documentation |
-
----
-
-## 🏆 THE SCORECARD
-
-Rate yourself 1-10 every Sunday:
-
-1. **Body** (20%) - Workouts, nutrition, sleep
-2. **Mind** (20%) - Discipline, no wasted time
-3. **German** (20%) - Anki streak, study hours
-4. **Code** (20%) - Hours logged, commits pushed
-5. **Finance** (10%) - Under budget, savings
-6. **Protocol** (10%) - Routine completion
-
-**Target:** 80+ points weekly
-
----
-
-## 🔥 THE 7 FANG YUAN COMMANDMENTS
-
-1. **Strength is the only virtue**
-2. **Detach from emotion, attach to results**
-3. **Never depend on luck, only preparation**
-4. **Sacrifice present for future**
-5. **Ruthless with self, calculating with others**
-6. **No shortcuts, only discipline**
-7. **Strong do what they can, weak suffer what they must**
-
----
-
-## 💪 BAKI BODY CHECKPOINTS
-
-| Month | Weight | Look | Strength |
-|-------|--------|------|----------|
-| Apr | 60-62kg | Muscle visible | Bench 60kg, Squat 80kg |
-| Aug | 63-65kg | Visible abs | Bench 80kg, Squat 100kg |
-| Dec | 65-68kg | Baki physique | Bench 100kg, Squat 120kg |
-
----
-
-## 💻 JOB-READY CHECKPOINTS
-
-| Month | Goal |
-|-------|------|
-| Apr | 3 portfolio projects, TypeScript mastered |
-| Jun | 50 job applications, 5+ interviews |
-| Aug | Job offer secured (or final rounds) |
-| Sep | **START NEW JOB** |
-
----
-
-## 🛠 Tech Stack
-
-**Frontend:** React 19 + TypeScript + Vite + Tailwind CSS v4 + Framer Motion  
-**Backend:** Node.js + Express + SQLite (better-sqlite3)  
-**Auth:** JWT with rate limiting
-
----
-
-**Remember:** *"The man who moves mountains begins by carrying away small stones."*
-
-**Today, you carry one stone.**
-
-**This is war. And you will win.**
+| `docs/TRANSFORMATION.md` | Personal execution blueprint |
+| `FEATURES_SUMMARY.md` | Feature inventory and current behavior |
+| `docs/ARCHITECTURE.md` | Technical architecture and API |
+| `docs/REFACTORING.md` | Refactoring and migration history |
 
 ---
 
 *Created: February 2026*  
-*Your transformation starts: NOW*
+*Last Updated: February 22, 2026*

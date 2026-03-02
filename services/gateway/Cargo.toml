@@ -1,0 +1,79 @@
+[package]
+name = "gateway"
+version.workspace = true
+edition.workspace = true
+
+[[bin]]
+name = "gateway"
+path = "src/main.rs"
+
+[[bin]]
+name = "migrate"
+path = "src/bin/migrate.rs"
+
+[dependencies]
+# Shared types
+shared-types = { path = "../../shared/types" }
+
+# Web framework
+actix-web.workspace = true
+actix-cors.workspace = true
+actix-rt.workspace = true
+actix-service.workspace = true
+actix-ws.workspace = true
+actix-multipart = "0.6"
+
+# Async runtime
+tokio.workspace = true
+tokio-util.workspace = true
+
+# Serialization
+serde.workspace = true
+serde_json.workspace = true
+
+# Database
+sqlx.workspace = true
+redis.workspace = true
+
+# Authentication
+jsonwebtoken.workspace = true
+bcrypt.workspace = true
+argon2.workspace = true
+
+# HTTP client
+reqwest.workspace = true
+
+# Error handling
+thiserror.workspace = true
+anyhow.workspace = true
+
+# Logging & Observability
+tracing.workspace = true
+tracing-subscriber.workspace = true
+
+# Configuration
+config.workspace = true
+dotenvy.workspace = true
+
+# Validation
+validator.workspace = true
+
+# Time handling
+chrono.workspace = true
+
+# UUID
+uuid.workspace = true
+
+# Async traits
+async-trait.workspace = true
+
+# Rate limiting
+governor.workspace = true
+
+# Other
+futures.workspace = true
+futures-util.workspace = true
+num_cpus = "1.16"
+
+[dev-dependencies]
+tokio-test = "0.4"
