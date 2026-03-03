@@ -5,6 +5,9 @@ import { redirect } from 'next/navigation';
 
 const GATEWAY_URL = process.env.NEXT_PUBLIC_GATEWAY_URL || 'http://127.0.0.1:3005';
 
+// Always use mock mode for Vercel preview (no backend needed)
+const isMockMode = true;
+
 export interface AuthState {
   success: boolean;
   error?: string;
@@ -26,6 +29,28 @@ export async function loginAction(
     return { success: false, error: 'Email and password are required' };
   }
 
+  // Mock mode: skip API call, just set cookies
+  if (isMockMode) {
+    const mockToken = 'mock-token-' + Date.now();
+    
+    (await cookies()).set('token', mockToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 60 * 60 * 24 * 7,
+      path: '/',
+    });
+
+    (await cookies()).set('access_token', mockToken, {
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 60 * 60 * 24 * 7,
+      path: '/',
+    });
+
+    return { success: true, message: 'Login successful' };
+  }
+
   try {
     const response = await fetch(`${GATEWAY_URL}/api/auth/login`, {
       method: 'POST',
@@ -40,16 +65,14 @@ export async function loginAction(
 
     const data = await response.json();
     
-    // Set HTTP-only cookie for security
     (await cookies()).set('token', data.token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
-      maxAge: 60 * 60 * 24 * 7, // 7 days
+      maxAge: 60 * 60 * 24 * 7,
       path: '/',
     });
 
-    // Also set access_token for client-side WebSocket
     (await cookies()).set('access_token', data.token, {
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
@@ -86,6 +109,28 @@ export async function registerAction(
     return { success: false, error: 'Passwords do not match' };
   }
 
+  // Mock mode: skip API call
+  if (isMockMode) {
+    const mockToken = 'mock-token-' + Date.now();
+    
+    (await cookies()).set('token', mockToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 60 * 60 * 24 * 7,
+      path: '/',
+    });
+
+    (await cookies()).set('access_token', mockToken, {
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 60 * 60 * 24 * 7,
+      path: '/',
+    });
+
+    return { success: true, message: 'Registration successful' };
+  }
+
   try {
     const response = await fetch(`${GATEWAY_URL}/api/auth/register`, {
       method: 'POST',
@@ -100,7 +145,6 @@ export async function registerAction(
 
     const data = await response.json();
     
-    // Set cookies
     (await cookies()).set('token', data.token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
