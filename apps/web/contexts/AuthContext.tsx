@@ -5,6 +5,15 @@ import { User } from "@/types/auth";
 import { api } from "@/lib/api";
 import { getToken, logoutAction } from "@/app/actions/auth";
 
+const MOCK_USER: User = {
+  id: "demo-user",
+  email: "demo@mirlind.io",
+  username: "DemoUser",
+  created_at: new Date().toISOString(),
+};
+
+const isMockMode = process.env.NEXT_PUBLIC_MOCK_API === "true";
+
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
@@ -22,8 +31,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   const refreshUser = useCallback(async () => {
+    // Mock mode: always logged in
+    if (isMockMode) {
+      setUser(MOCK_USER);
+      return;
+    }
+
     try {
-      // Check Server Action cookie first, then fall back to localStorage
       const token = await getToken();
       const localToken = typeof window !== 'undefined' 
         ? localStorage.getItem("access_token") 
@@ -41,7 +55,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    // Check if we have a token and validate it
     const initAuth = async () => {
       await refreshUser();
       setIsLoading(false);
@@ -51,6 +64,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [refreshUser]);
 
   const login = async (email: string, password: string) => {
+    if (isMockMode) {
+      setUser(MOCK_USER);
+      return;
+    }
+
     setIsLoading(true);
     try {
       const response = await api.login({ email, password });
@@ -60,10 +78,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const register = async (email: string, username: string, password: string) => {
+  const register = async (email: string, username: string, _password: string) => {
+    if (isMockMode) {
+      setUser({ ...MOCK_USER, email, username });
+      return;
+    }
+
     setIsLoading(true);
     try {
-      const response = await api.register({ email, username, password });
+      const response = await api.register({ email, username, password: _password });
       setUser(response.user);
     } finally {
       setIsLoading(false);
@@ -71,11 +94,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const logout = async () => {
+    if (isMockMode) {
+      setUser(null);
+      return;
+    }
+
     setIsLoading(true);
     try {
-      // Call Server Action to clear cookies
       await logoutAction();
-      // Clear localStorage
       if (typeof window !== 'undefined') {
         localStorage.removeItem("access_token");
       }
