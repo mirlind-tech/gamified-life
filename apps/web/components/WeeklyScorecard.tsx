@@ -132,9 +132,11 @@ export function WeeklyScorecard() {
   const [review, setReview] = useState<WeeklyReview | null>(null);
   const [items, setItems] = useState<ScoreCardItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [weekLabel, setWeekLabel] = useState("Current week");
 
   useEffect(() => {
     const today = new Date().toISOString().slice(0, 10);
+    setWeekLabel(formatWeekLabel(getWeekStart()));
 
     const loadScorecard = async () => {
       setIsLoading(true);
@@ -188,8 +190,8 @@ export function WeeklyScorecard() {
           <span className="text-2xl">{EMOJIS.CHART}</span>
           <div>
             <h3 className="text-xl font-bold text-white">Weekly Scorecard</h3>
-            <p className="text-xs text-[var(--color-text-muted)]">
-              Live operational score for {formatWeekLabel(getWeekStart())}
+            <p className="text-xs text-(--color-text-muted)">
+              Live operational score for {weekLabel}
             </p>
           </div>
         </div>
@@ -202,7 +204,7 @@ export function WeeklyScorecard() {
       </div>
 
       {isLoading ? (
-        <div className="text-center py-10 text-[var(--color-text-muted)]">Loading weekly scorecard...</div>
+        <div className="text-center py-10 text-(--color-text-muted)">Loading weekly scorecard...</div>
       ) : (
         <>
           <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4 mb-6">
@@ -219,7 +221,7 @@ export function WeeklyScorecard() {
                     <span className="text-2xl">{item.icon}</span>
                     <div>
                       <p className="font-semibold text-white">{item.name}</p>
-                      <p className="text-xs text-[var(--color-text-muted)]">{item.weight}% weight</p>
+                      <p className="text-xs text-(--color-text-muted)">{item.weight}% weight</p>
                     </div>
                   </div>
                   <span className="text-2xl font-bold font-mono" style={{ color: item.color }}>
@@ -235,7 +237,7 @@ export function WeeklyScorecard() {
                     style={{ backgroundColor: item.color }}
                   />
                 </div>
-                <p className="text-sm text-[var(--color-text-secondary)]">{item.detail}</p>
+                <p className="text-sm text-(--color-text-secondary)">{item.detail}</p>
               </motion.div>
             ))}
           </div>
@@ -244,13 +246,13 @@ export function WeeklyScorecard() {
             <div className="p-4 rounded-2xl bg-white/5 border border-white/10">
               <p className="text-sm font-semibold text-white mb-2">Wins</p>
               {wins.length > 0 ? (
-                <ul className="space-y-2 text-sm text-[var(--color-text-secondary)]">
+                <ul className="space-y-2 text-sm text-(--color-text-secondary)">
                   {wins.slice(0, 4).map((win) => (
                     <li key={win}>- {win}</li>
                   ))}
                 </ul>
               ) : (
-                <p className="text-sm text-[var(--color-text-muted)]">
+                <p className="text-sm text-(--color-text-muted)">
                   No weekly review saved yet. This card is using live gateway signals.
                 </p>
               )}
@@ -258,13 +260,13 @@ export function WeeklyScorecard() {
             <div className="p-4 rounded-2xl bg-white/5 border border-white/10">
               <p className="text-sm font-semibold text-white mb-2">Lessons</p>
               {lessons.length > 0 ? (
-                <ul className="space-y-2 text-sm text-[var(--color-text-secondary)]">
+                <ul className="space-y-2 text-sm text-(--color-text-secondary)">
                   {lessons.slice(0, 4).map((lesson) => (
                     <li key={lesson}>- {lesson}</li>
                   ))}
                 </ul>
               ) : (
-                <p className="text-sm text-[var(--color-text-muted)]">
+                <p className="text-sm text-(--color-text-muted)">
                   Log a weekly review in the backend to persist explicit wins and lessons.
                 </p>
               )}

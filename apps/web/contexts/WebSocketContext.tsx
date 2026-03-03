@@ -15,10 +15,10 @@ interface WebSocketContextValue {
   isConnected: boolean;
   isAuthenticated: boolean;
   notifications: Notification[];
-  subscribe: (channel: string) => boolean;
-  unsubscribe: (channel: string) => boolean;
-  sendNotification: (title: string, body: string, level?: Notification["level"]) => void;
-  dismissNotification: (id: string) => void;
+  subscribe: (_channel: string) => boolean;
+  unsubscribe: (_channel: string) => boolean;
+  sendNotification: (_title: string, _body: string, _level?: Notification["level"]) => void;
+  dismissNotification: (_id: string) => void;
   clearNotifications: () => void;
 }
 
@@ -69,7 +69,7 @@ export function WebSocketProvider({ children }: WebSocketProviderProps) {
     }
   }, []);
 
-  const { isConnected, isAuthenticated, subscribe, unsubscribe, send } = useWebSocket({
+  const { isConnected, isAuthenticated, subscribe, unsubscribe, send: _send } = useWebSocket({
     onMessage: handleMessage,
     autoReconnect: true,
   });

@@ -1,6 +1,6 @@
 # Mirlind Protocol Web
 
-Next.js 14 frontend for Mirlind Life OS.
+Next.js 16 frontend for Mirlind Life OS.
 
 ## Development
 
@@ -8,8 +8,8 @@ Next.js 14 frontend for Mirlind Life OS.
 # Install dependencies
 npm install
 
-# Run dev server (port 3001)
-npm run dev  # Runs on http://localhost:3002
+# Run dev server
+npm run dev  # Runs on http://localhost:3003
 
 # Build
 npm run build
@@ -17,7 +17,7 @@ npm run build
 
 ## Architecture
 
-- **Next.js 14** with App Router
+- **Next.js 16** with App Router
 - **TypeScript** for type safety
 - **Tailwind CSS** with custom cyberpunk theme
 - **Direct API** to Rust Gateway (no proxy)
@@ -34,9 +34,8 @@ cargo run -p gateway
 
 ## Ports
 
-- Web app: `http://localhost:3002`
+- Web app: `http://localhost:3003`
 - Rust Gateway: `http://localhost:3000`
-- Legacy React: `http://localhost:5173` (if running)
 
 ## Cyberpunk Theme
 
@@ -46,3 +45,8 @@ The app uses a custom CSS-based cyberpunk theme with:
 - Grid background pattern
 - Glow effects and animations
 - Scanline overlay
+
+## WSL Development
+
+Run the app from one environment only. Mixing Windows `npx next dev` with WSL `npm run dev`
+creates mismatched manifest paths (`C:\...` vs `/mnt/c/...`) and breaks React Server Components.

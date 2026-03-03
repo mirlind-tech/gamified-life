@@ -2,13 +2,6 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
-interface ProtocolReminder {
-  id: string;
-  title: string;
-  body: string;
-  scheduledTime: number;
-}
-
 export function usePushNotifications() {
   const [permission, setPermission] = useState<NotificationPermission>("default");
   const [isSupported, setIsSupported] = useState(false);

@@ -119,7 +119,7 @@ export function JobHuntTracker() {
           <span className="text-3xl">{EMOJIS.JOB}</span>
           <div>
             <h3 className="text-xl font-bold text-white">Job Switch Tracker</h3>
-            <p className="text-xs text-[var(--color-text-muted)]">
+            <p className="text-xs text-(--color-text-muted)">
               Live pipeline from the Rust gateway
             </p>
           </div>
@@ -142,7 +142,7 @@ export function JobHuntTracker() {
             {motivation.message}
           </p>
         </div>
-        <p className="text-sm text-[var(--color-text-muted)] mt-2">
+        <p className="text-sm text-(--color-text-muted) mt-2">
           {daysUntilDeadline > 0
             ? `${daysUntilDeadline} days left. ${appsPerWeekNeeded} applications/week needed.`
             : "Deadline target is not set or already passed."}
@@ -184,16 +184,16 @@ export function JobHuntTracker() {
       </div>
 
       <div>
-        <h4 className="text-sm font-semibold text-[var(--color-text-secondary)] mb-3">
+        <h4 className="text-sm font-semibold text-(--color-text-secondary) mb-3">
           Recent Applications ({jobs.length})
         </h4>
 
         {isLoading ? (
-          <div className="text-center py-8 text-[var(--color-text-muted)]">
+          <div className="text-center py-8 text-(--color-text-muted)">
             <p>Loading job pipeline...</p>
           </div>
         ) : jobs.length === 0 ? (
-          <div className="text-center py-8 text-[var(--color-text-muted)]">
+          <div className="text-center py-8 text-(--color-text-muted)">
             <p className="text-4xl mb-2">🚀</p>
             <p>No applications yet. Log the first one here.</p>
           </div>
@@ -213,15 +213,15 @@ export function JobHuntTracker() {
                       <h4 className="font-semibold text-white">{job.company}</h4>
                       <StatusBadge status={job.status} />
                     </div>
-                    <p className="text-sm text-[var(--color-text-secondary)]">{job.position}</p>
-                    <p className="text-xs text-[var(--color-text-muted)] mt-1">
+                    <p className="text-sm text-(--color-text-secondary)">{job.position}</p>
+                    <p className="text-xs text-(--color-text-muted) mt-1">
                       Applied: {new Date(job.applied_date).toLocaleDateString()}
                     </p>
                     {job.location && (
-                      <p className="text-xs text-[var(--color-text-muted)] mt-1">{job.location}</p>
+                      <p className="text-xs text-(--color-text-muted) mt-1">{job.location}</p>
                     )}
                     {job.notes && (
-                      <p className="text-xs text-[var(--color-text-muted)] mt-1 italic">{job.notes}</p>
+                      <p className="text-xs text-(--color-text-muted) mt-1 italic">{job.notes}</p>
                     )}
                   </div>
                   <div className="flex gap-2">
@@ -233,7 +233,7 @@ export function JobHuntTracker() {
                         })
                       }
                       disabled={busyJobId === job.id}
-                      className="bg-black/30 border border-white/10 rounded px-2 py-1 text-xs text-white focus:outline-none focus:border-[var(--color-accent-purple)]"
+                      className="bg-black/30 border border-white/10 rounded px-2 py-1 text-xs text-white focus:outline-none focus:border-(--color-accent-purple)"
                     >
                       {EDITABLE_STATUSES.map((status) => (
                         <option key={status} value={status}>
@@ -244,7 +244,7 @@ export function JobHuntTracker() {
                     <button
                       onClick={() => void handleDelete(job.id)}
                       disabled={busyJobId === job.id}
-                      className="p-1.5 text-[var(--color-text-muted)] hover:text-red-500 transition-colors disabled:opacity-50"
+                      className="p-1.5 text-(--color-text-muted) hover:text-red-500 transition-colors disabled:opacity-50"
                       title="Delete"
                     >
                       🗑️
@@ -261,8 +261,8 @@ export function JobHuntTracker() {
         {showAddModal && (
           <AddApplicationModal
             onClose={() => setShowAddModal(false)}
-            onAdd={async (application) => {
-              await api.createJob(application);
+            onAdd={async (_application) => {
+              await api.createJob(_application);
               setShowAddModal(false);
               await loadData();
             }}
@@ -290,12 +290,12 @@ function StatBox({
     <div className="p-4 rounded-xl bg-white/5 border border-white/10">
       <div className="flex items-center justify-between mb-2">
         <span className="text-2xl">{icon}</span>
-        <span className="text-xs text-[var(--color-text-muted)]">
+        <span className="text-xs text-(--color-text-muted)">
           {value}/{target}
         </span>
       </div>
       <div className="text-2xl font-bold text-white">{value}</div>
-      <div className="text-xs text-[var(--color-text-muted)]">{label}</div>
+      <div className="text-xs text-(--color-text-muted)">{label}</div>
       <div className="mt-3 h-1.5 rounded-full bg-white/10 overflow-hidden">
         <div
           className="h-full rounded-full"
@@ -322,8 +322,8 @@ function ProgressBar({
   return (
     <div>
       <div className="flex justify-between text-sm mb-2">
-        <span className="text-[var(--color-text-secondary)]">{label}</span>
-        <span className="text-[var(--color-text-muted)]">
+        <span className="text-(--color-text-secondary)">{label}</span>
+        <span className="text-(--color-text-muted)">
           {current}/{target}
         </span>
       </div>
@@ -355,7 +355,7 @@ function AddApplicationModal({
   onAdd,
 }: {
   onClose: () => void;
-  onAdd: (application: Partial<JobApplication>) => Promise<void>;
+  onAdd: (_application: Partial<JobApplication>) => Promise<void>;
 }) {
   const [company, setCompany] = useState("");
   const [position, setPosition] = useState("");
@@ -402,11 +402,11 @@ function AddApplicationModal({
       >
         <div>
           <h4 className="text-xl font-semibold text-white">Add Application</h4>
-          <p className="text-sm text-[var(--color-text-muted)]">This saves directly to the gateway.</p>
+          <p className="text-sm text-(--color-text-muted)">This saves directly to the gateway.</p>
         </div>
 
         <div>
-          <label className="block text-sm text-[var(--color-text-secondary)] mb-1">Company</label>
+          <label className="block text-sm text-(--color-text-secondary) mb-1">Company</label>
           <input
             value={company}
             onChange={(event) => setCompany(event.target.value)}
@@ -417,7 +417,7 @@ function AddApplicationModal({
         </div>
 
         <div>
-          <label className="block text-sm text-[var(--color-text-secondary)] mb-1">Position</label>
+          <label className="block text-sm text-(--color-text-secondary) mb-1">Position</label>
           <input
             value={position}
             onChange={(event) => setPosition(event.target.value)}
@@ -427,7 +427,7 @@ function AddApplicationModal({
         </div>
 
         <div>
-          <label className="block text-sm text-[var(--color-text-secondary)] mb-1">Location</label>
+          <label className="block text-sm text-(--color-text-secondary) mb-1">Location</label>
           <input
             value={location}
             onChange={(event) => setLocation(event.target.value)}
@@ -437,7 +437,7 @@ function AddApplicationModal({
         </div>
 
         <div>
-          <label className="block text-sm text-[var(--color-text-secondary)] mb-1">Notes</label>
+          <label className="block text-sm text-(--color-text-secondary) mb-1">Notes</label>
           <textarea
             value={notes}
             onChange={(event) => setNotes(event.target.value)}

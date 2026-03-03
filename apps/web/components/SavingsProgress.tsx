@@ -114,7 +114,7 @@ export function SavingsProgress() {
           <span className="text-3xl">{EMOJIS.CAPITAL}</span>
           <div>
             <h3 className="text-xl font-bold text-white">Savings Buffer</h3>
-            <p className="text-xs text-[var(--color-text-muted)]">
+            <p className="text-xs text-(--color-text-muted)">
               Backed by the new finance profile in Rust
             </p>
           </div>
@@ -128,9 +128,9 @@ export function SavingsProgress() {
       </div>
 
       {isLoading ? (
-        <div className="text-center py-10 text-[var(--color-text-muted)]">Loading savings profile...</div>
+        <div className="text-center py-10 text-(--color-text-muted)">Loading savings profile...</div>
       ) : !profile ? (
-        <div className="text-center py-10 text-[var(--color-text-muted)]">Finance profile unavailable.</div>
+        <div className="text-center py-10 text-(--color-text-muted)">Finance profile unavailable.</div>
       ) : (
         <>
           <div className="flex flex-col lg:flex-row gap-8">
@@ -154,14 +154,14 @@ export function SavingsProgress() {
               </svg>
               <div className="absolute inset-0 flex flex-col items-center justify-center">
                 <span className="text-3xl font-bold font-mono text-white">{percentage.toFixed(0)}%</span>
-                <span className="text-xs text-[var(--color-text-muted)]">of target</span>
+                <span className="text-xs text-(--color-text-muted)">of target</span>
               </div>
             </div>
 
             <div className="flex-1">
               {isEditing ? (
                 <div className="space-y-3">
-                  <label htmlFor="current-savings" className="block text-sm text-[var(--color-text-muted)]">
+                  <label htmlFor="current-savings" className="block text-sm text-(--color-text-muted)">
                     Current savings
                   </label>
                   <input
@@ -192,7 +192,7 @@ export function SavingsProgress() {
                   <div className="text-4xl font-bold text-white mb-1">
                     EUR {currentSavings.toLocaleString()}
                   </div>
-                  <p className="text-[var(--color-text-secondary)] mb-4">
+                  <p className="text-(--color-text-secondary) mb-4">
                     of EUR {goal.toLocaleString()} target
                   </p>
                   <button onClick={() => setIsEditing(true)} className="btn-secondary text-sm">
@@ -209,13 +209,13 @@ export function SavingsProgress() {
               </div>
 
               <div className="mt-5 p-4 rounded-xl bg-black/20 border border-white/10 space-y-2">
-                <p className="text-sm text-[var(--color-text-secondary)]">
+                <p className="text-sm text-(--color-text-secondary)">
                   Goal deadline: {profile.savings_goal_target_date || "Not set"}
                 </p>
-                <p className="text-sm text-[var(--color-text-secondary)]">
+                <p className="text-sm text-(--color-text-secondary)">
                   Monthly fixed costs: EUR {fixedCosts.toFixed(0)} | Food: EUR {foodBudget.toFixed(0)} | Discretionary: EUR {discretionaryBudget.toFixed(0)}
                 </p>
-                <p className="text-sm text-[var(--color-text-secondary)]">
+                <p className="text-sm text-(--color-text-secondary)">
                   Required monthly savings: EUR {requiredMonthlySavings.toFixed(0)}
                 </p>
                 {monthlyGap > 0 && (
@@ -228,12 +228,12 @@ export function SavingsProgress() {
           </div>
 
           <div className="mt-6">
-            <h4 className="text-sm font-semibold text-[var(--color-text-secondary)] mb-3">Fixed cost breakdown</h4>
+            <h4 className="text-sm font-semibold text-(--color-text-secondary) mb-3">Fixed cost breakdown</h4>
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
               {Object.entries(profile.fixed_costs_breakdown || {}).map(([key, value]) => (
                 <div key={key} className="p-3 rounded-xl bg-white/5 border border-white/10">
                   <div className="text-sm text-white">{formatBudgetKey(key)}</div>
-                  <div className="text-xs text-[var(--color-text-muted)]">EUR {value}</div>
+                  <div className="text-xs text-(--color-text-muted)">EUR {value}</div>
                 </div>
               ))}
             </div>
@@ -255,7 +255,7 @@ function MetricCard({
 }) {
   return (
     <div className="p-3 rounded-xl bg-white/5 border border-white/10">
-      <div className="text-xs text-[var(--color-text-muted)]">{label}</div>
+      <div className="text-xs text-(--color-text-muted)">{label}</div>
       <div className="text-lg font-bold" style={{ color }}>
         {value}
       </div>

@@ -44,15 +44,23 @@ Priority order (current):
 
 ## Quick Start
 
+### Prerequisites
+- Docker (for PostgreSQL & Redis)
+- Rust + Cargo
+- Node.js + npm
+
 ```bash
-# 1. Start infrastructure
-docker compose up -d postgres redis
+# 1. Start infrastructure (PostgreSQL + Redis)
+docker-compose up -d postgres redis
 
-# 2. Start the Rust gateway
-cargo run -p gateway
+# 2. Run database migrations (if first time)
+cargo run -p gateway --bin migrate
 
-# 3. Start the Next.js app (new terminal)
-cd apps/web && npm install && npm run dev
+# 3. Start the Rust gateway
+cargo run -p gateway --bin gateway
+
+# 4. Start the Next.js frontend (new terminal)
+cd apps/web && npm run dev
 ```
 
 URLs:
@@ -74,6 +82,7 @@ If login shows a connectivity error:
 4. Confirm frontend gateway URL in `apps/web/.env`:
    `NEXT_PUBLIC_GATEWAY_URL=http://127.0.0.1:3000`.
 5. Start the Next app from `apps/web` and open `http://localhost:3003`.
+6. Do not run a second `next dev` process from Windows at the same time, or the RSC manifest will break on path mismatches.
 
 ---
 
@@ -181,4 +190,18 @@ Weekly scorecard uses 6 categories (max 60 total points).
 ---
 
 *Created: February 2026*  
-*Last Updated: February 22, 2026*
+*Last Updated: March 2, 2026*
+
+---
+
+## Architecture
+
+| Layer | Technology | Purpose |
+|-------|------------|---------|
+| **Frontend** | Next.js 16 + React 19 | Web UI |
+| **Gateway** | Rust (Actix-web) | API server |
+| **Database** | PostgreSQL 16 | Primary data store |
+| **Cache** | Redis 7 | Sessions, caching |
+| **AI** | Ollama (local) | LLM inference |
+
+**Note:** SQLite/Node.js backend has been migrated to PostgreSQL/Rust.

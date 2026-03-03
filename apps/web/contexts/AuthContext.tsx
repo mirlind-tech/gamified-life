@@ -3,13 +3,14 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { User } from "@/types/auth";
 import { api } from "@/lib/api";
+import { getToken, logoutAction } from "@/app/actions/auth";
 
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  register: (email: string, username: string, password: string) => Promise<void>;
+  login: (_email: string, _password: string) => Promise<void>;
+  register: (_email: string, _username: string, _password: string) => Promise<void>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
 }
@@ -22,8 +23,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const refreshUser = useCallback(async () => {
     try {
-      const { user: userData } = await api.getMe();
-      setUser(userData);
+      // Check Server Action cookie first, then fall back to localStorage
+      const token = await getToken();
+      const localToken = typeof window !== 'undefined' 
+        ? localStorage.getItem("access_token") 
+        : null;
+      
+      if (token || localToken) {
+        const { user: userData } = await api.getMe();
+        setUser(userData);
+      } else {
+        setUser(null);
+      }
     } catch {
       setUser(null);
     }
@@ -32,10 +43,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     // Check if we have a token and validate it
     const initAuth = async () => {
-      const token = localStorage.getItem("access_token");
-      if (token) {
-        await refreshUser();
-      }
+      await refreshUser();
       setIsLoading(false);
     };
 
@@ -65,7 +73,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = async () => {
     setIsLoading(true);
     try {
-      await api.logout();
+      // Call Server Action to clear cookies
+      await logoutAction();
+      // Clear localStorage
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem("access_token");
+      }
       setUser(null);
     } finally {
       setIsLoading(false);

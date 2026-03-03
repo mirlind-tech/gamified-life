@@ -3,7 +3,13 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 
 const GATEWAY_URL = process.env.NEXT_PUBLIC_GATEWAY_URL || "http://127.0.0.1:3000";
-const WS_URL = GATEWAY_URL.replace("http://", "ws://").replace("https://", "wss://");
+
+function buildWebSocketUrl() {
+  const url = new URL(GATEWAY_URL);
+  url.protocol = url.protocol === "https:" ? "wss:" : "ws:";
+  url.pathname = "/api/ws";
+  return url.toString();
+}
 
 export type WsMessage =
   | { type: "auth"; payload: { token: string } }
@@ -19,7 +25,7 @@ export type WsMessage =
   | { type: "chat_stream"; payload: { message_id: string; content: string; done: boolean } }
   | { type: "chat_request"; payload: { message: string; message_id: string; history: unknown[] } };
 
-type MessageHandler = (msg: WsMessage) => void;
+type MessageHandler = (_msg: WsMessage) => void;
 
 interface UseWebSocketOptions {
   onMessage?: MessageHandler;
@@ -41,8 +47,9 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
   const [isConnected, setIsConnected] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const wsRef = useRef<WebSocket | null>(null);
-  const reconnectTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const messageHandlersRef = useRef<Set<MessageHandler>>(new Set());
+  const connectingRef = useRef(false);
 
   // Add message handler
   const addMessageHandler = useCallback((handler: MessageHandler) => {
@@ -81,33 +88,39 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
 
   // Connect
   const connect = useCallback(() => {
+    if (typeof window === "undefined" || connectingRef.current) {
+      return;
+    }
+
     if (wsRef.current?.readyState === WebSocket.OPEN) {
       return;
     }
 
+    connectingRef.current = true;
+
     try {
-      // Get token from localStorage
-      const token = typeof window !== "undefined" ? localStorage.getItem("access_token") : null;
-      const url = token ? `${WS_URL}/ws?token=${encodeURIComponent(token)}` : `${WS_URL}/ws`;
+      const token = localStorage.getItem("access_token");
+      const url = buildWebSocketUrl();
 
       const ws = new WebSocket(url);
 
       ws.onopen = () => {
         console.log("[WebSocket] Connected");
         setIsConnected(true);
+        connectingRef.current = false;
         onConnect?.();
 
-        // If we have a token in localStorage but didn't send it in URL, auth now
-        if (token && !url.includes("token=")) {
-          authenticate(token);
+        // Authenticate via message instead of URL to avoid payload size issues
+        if (token) {
+          ws.send(JSON.stringify({ type: "auth", payload: { token } }));
+          setIsAuthenticated(true);
         }
       };
 
       ws.onmessage = (event) => {
         try {
           const msg: WsMessage = JSON.parse(event.data);
-          
-          // Handle auth confirmation
+
           if (msg.type === "notification" && msg.payload.title === "Connected") {
             setIsAuthenticated(true);
           }
@@ -116,17 +129,18 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
           messageHandlersRef.current.forEach((handler) => handler(msg));
           onMessage?.(msg);
         } catch (e) {
-          console.error("[WebSocket] Failed to parse message:", e);
+          console.warn("[WebSocket] Failed to parse message:", e);
         }
       };
 
-      ws.onclose = () => {
-        console.log("[WebSocket] Disconnected");
+      ws.onclose = (event) => {
+        console.log("[WebSocket] Disconnected", event.code, event.reason);
         setIsConnected(false);
         setIsAuthenticated(false);
+        connectingRef.current = false;
         onDisconnect?.();
 
-        if (autoReconnect) {
+        if (autoReconnect && event.code !== 1000 && event.code !== 1006) {
           reconnectTimerRef.current = setTimeout(() => {
             console.log("[WebSocket] Reconnecting...");
             connect();
@@ -134,15 +148,12 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
         }
       };
 
-      ws.onerror = (error) => {
-        console.error("[WebSocket] Error:", error);
-      };
-
       wsRef.current = ws;
     } catch (e) {
-      console.error("[WebSocket] Failed to connect:", e);
+      console.warn("[WebSocket] Failed to connect:", e);
+      connectingRef.current = false;
     }
-  }, [authenticate, onConnect, onDisconnect, onMessage, autoReconnect, reconnectInterval]);
+  }, [onConnect, onDisconnect, onMessage, autoReconnect, reconnectInterval]);
 
   // Disconnect
   const disconnect = useCallback(() => {
@@ -154,11 +165,16 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
     wsRef.current = null;
   }, []);
 
-  // Connect on mount
+  // Connect on mount - avoid double connection in Strict Mode
   useEffect(() => {
-    connect();
-    return () => disconnect();
-  }, [connect, disconnect]);
+    const timer = setTimeout(() => {
+      connect();
+    }, 100);
+    return () => {
+      clearTimeout(timer);
+      disconnect();
+    };
+  }, []);
 
   return {
     isConnected,

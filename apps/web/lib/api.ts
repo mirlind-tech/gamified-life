@@ -435,7 +435,7 @@ class ApiClient {
 
   private async request<T>(
     endpoint: string,
-    options: RequestInit = {},
+    options: Parameters<typeof fetch>[1] = {},
     config?: RequestConfig
   ): Promise<T> {
     const headers: Record<string, string> = {

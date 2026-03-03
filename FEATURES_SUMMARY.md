@@ -6,15 +6,16 @@ Complete overview of the application's features and systems.
 
 ## 🎓 Skills Tree
 
-**Purpose:** Master real-world skills like backflip, guitar, juggling, salsa, etc.
+**Purpose:** Master 12 real-world skills like backflip, guitar, juggling, salsa, etc.
 
 ### Features
-- 11 skills across 5 categories
-- 3 stages per skill with micro-goals
+- 12 skills across 5 categories
+- 3 stages per skill with micro-goals (Foundation → Progression → Execution)
+- 40 hours estimated per skill (10h + 15h + 15h)
 - Progress tracking with stage completion
 - Category filtering and status filtering
 - Skill detail modal with resources
-- XP-based skill mastery
+- LocalStorage persistence
 
 ### Skills by Category
 
@@ -83,6 +84,92 @@ Complete overview of the application's features and systems.
 
 ---
 
+## 👤 Character Profile
+
+**Purpose:** Central dashboard for tracking life progress across all domains.
+
+### Features
+- **Weekly Scorecard**: 6 categories (Body, Mind, German, Code, Finance, Protocol)
+  - Weighted scoring system aligned to current priority stack
+  - Score range: 0-60
+  - Target: 48+ weekly (minimum), 54+ preferred
+  - Week navigation with historical data
+  - Status indicators: EXCELLENT / GOOD / AVERAGE / CRISIS
+- **B1 German Countdown**: deadline tracking component (currently date-based, configurable plan target)
+  - Urgency status indicators
+  - Checkpoint tracking (Apr 30, Jun 1, Sep 30)
+- **Savings Progress**: EUR 6,000 goal by Aug 31, 2027 (aggressive realistic path)
+  - Progress bar with checkpoints
+  - Current amount tracking
+- **Job Hunt Tracker**: 60 applications and 8 interviews by Jul 31, 2026
+  - Pipeline tracking (Saved, Applied, Interview, Offer, Rejected)
+  - Daily/weekly pace calculation
+
+---
+
+## 📸 Photo Progress
+
+**Purpose:** Weekly body transformation photo tracking with comparison tools.
+
+### Features
+- Upload front, side, and back photos weekly
+- Before/after comparison slider
+- Timeline carousel view
+- Quick compare (first vs latest)
+- Stats: weeks logged, current weight, change tracking
+- Milestone badges (First Photo, 4 Weeks, 12 Weeks, etc.)
+- LocalStorage persistence
+
+---
+
+## 📊 Charts & Analytics
+
+**Purpose:** Visual tracking of weight and XP history.
+
+### Weight Tracker
+- Time range filtering (1M / 3M / 6M / 1Y)
+- SVG line chart visualization
+- Stats: Current, Change, Lowest, Average
+- Add/delete weight entries
+- History log with notes
+
+### XP History
+- Time range filtering (7D / 30D / 90D)
+- Daily XP bar chart
+- Stats: Total XP, Daily Average, Best Day
+- Breakdown by source (Daily Quest, Pillar, Principle, Challenge, Skill)
+
+---
+
+## 💻 Tech Stack Curriculum
+
+**Purpose:** Complete 10-skill curriculum for full-stack mastery.
+
+### The 10 Skills
+| Skill | Modules | Hours | Key Topics |
+|-------|---------|-------|------------|
+| **JavaScript** | 9 | 30h | Variables, Functions, Async, DOM, ES6+ |
+| **TypeScript** | 4 | 12h | Types, Interfaces, Generics, Config |
+| **React** | 5 | 25h | Hooks, State, Effects, Router, Testing |
+| **Node.js** | 6 | 20h | Express, Middleware, Auth, Security |
+| **PostgreSQL** | 4 | 15h | Schema, Queries, Relations, Optimization |
+| **Git** | 4 | 10h | Branching, Merging, Rebase, Workflows |
+| **Docker** | 3 | 12h | Images, Compose, Volumes, Deployment |
+| **System Design** | 4 | 20h | Architecture, Scalability, Microservices |
+| **Rust** | 3 | 25h | Ownership, Structs, Lifetimes, Async |
+| **Python** | 3 | 20h | Syntax, Data Science, Django, Scripting |
+
+**Total: 40+ modules, 100+ topics, 200+ hours**
+
+### Features
+- Progress tracking per module
+- Prerequisites system
+- Hours tracking
+- Phase-based learning path
+- Module notes and custom hours
+
+---
+
 ## 💻 JavaScript Coding Roadmap
 
 **Purpose:** Structured learning path for JavaScript mastery.
@@ -129,6 +216,7 @@ Complete overview of the application's features and systems.
 - Weekly streak calculation
 - Protocol heatmap
 - Historical data view
+- Priority messaging aligned to: Job Ready -> Finance -> Coding Depth -> Body -> German
 
 ---
 
@@ -147,7 +235,7 @@ Complete overview of the application's features and systems.
 
 ## 🇩🇪 German Learning
 
-**Purpose:** Track A0 → B1 progress.
+**Purpose:** Track German progress from current level toward job + residency needs.
 
 ### Features
 - Anki integration (cards, time, streak)
@@ -167,8 +255,10 @@ Complete overview of the application's features and systems.
 - Daily expense logging
 - Budget categories
 - Weekly/Monthly summaries
-- Savings progress bar
-- Kosovo transfer tracker
+- Editable finance profile inputs (income, fixed costs, food budget, savings, goal)
+- Savings progress and runway calculations
+- Kosovo apartment commitment integrated in monthly fixed costs
+- One-click monthly planned savings update
 
 ---
 
@@ -180,7 +270,7 @@ The app is built around 5 core life domains:
 |--------|------|-------|-------------|
 | ⚡ Craft | Technical | #06b6d4 | JavaScript, React, Node.js |
 | 💪 Vessel | Physical | #ec4899 | Gym, Nutrition, Sleep |
-| 🗣️ Tongue | Language | #8b5cf6 | German A1→B1 |
+| 🗣️ Tongue | Language | #8b5cf6 | German A1- to job-ready communication |
 | 🧠 Principle | Mental | #a855f7 | Focus, Discipline |
 | 💰 Capital | Financial | #10b981 | Budget, Savings |
 
@@ -220,8 +310,7 @@ The app is built around 5 core life domains:
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) - Technical documentation
 - [docs/TRANSFORMATION.md](docs/TRANSFORMATION.md) - Personal mission blueprint
 - [docs/REFACTORING.md](docs/REFACTORING.md) - Technical changes
-- [backend/README.md](backend/README.md) - Backend API docs
 
 ---
 
-*Last Updated: February 2026*
+*Last Updated: February 19, 2026*

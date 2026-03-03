@@ -3,23 +3,38 @@
 use actix_web::{HttpRequest, HttpResponse, web};
 use actix_ws::{Message, Session};
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
+use std::sync::Arc;
 use std::time::{Duration, Instant};
-use tokio::sync::broadcast;
+use tokio::sync::{broadcast, RwLock};
 use tokio::time::interval;
 use tracing::{debug, error, info, warn};
+use uuid::Uuid;
 
 use crate::services::AuthService;
 
-/// Global message broker for broadcasting
+/// Connection info for tracking WebSocket sessions
+#[derive(Debug, Clone)]
+pub struct ConnectionInfo {
+    pub user_id: Option<String>,
+    pub connected_at: Instant,
+    pub channels: Vec<String>,
+}
+
+/// Global message broker with connection tracking
 #[derive(Clone)]
 pub struct MessageBroker {
     sender: broadcast::Sender<WsMessage>,
+    connections: Arc<RwLock<HashMap<Uuid, ConnectionInfo>>>,
 }
 
 impl Default for MessageBroker {
     fn default() -> Self {
         let (sender, _) = broadcast::channel(1000);
-        Self { sender }
+        Self {
+            sender,
+            connections: Arc::new(RwLock::new(HashMap::new())),
+        }
     }
 }
 
@@ -32,8 +47,57 @@ impl MessageBroker {
         self.sender.subscribe()
     }
 
-    #[allow(dead_code)]
     pub fn send(&self, msg: WsMessage) {
+        let _ = self.sender.send(msg);
+    }
+
+    /// Register a new connection
+    pub async fn register_connection(&self, id: Uuid, user_id: Option<String>) {
+        let mut conns = self.connections.write().await;
+        conns.insert(id, ConnectionInfo {
+            user_id,
+            connected_at: Instant::now(),
+            channels: Vec::new(),
+        });
+        let count = conns.len();
+        drop(conns);
+        tracing::info!("WebSocket connection registered: id={}, total_connections={}", id, count);
+    }
+
+    /// Unregister a connection
+    pub async fn unregister_connection(&self, id: Uuid) {
+        let mut conns = self.connections.write().await;
+        conns.remove(&id);
+        let count = conns.len();
+        drop(conns);
+        tracing::info!("WebSocket connection unregistered: id={}, total_connections={}", id, count);
+    }
+
+    /// Update connection channels
+    pub async fn update_channels(&self, id: Uuid, channels: Vec<String>) {
+        let mut conns = self.connections.write().await;
+        if let Some(conn) = conns.get_mut(&id) {
+            conn.channels = channels;
+        }
+    }
+
+    /// Get connection count
+    pub async fn connection_count(&self) -> usize {
+        self.connections.read().await.len()
+    }
+
+    /// Get authenticated connection count
+    pub async fn authenticated_count(&self) -> usize {
+        self.connections
+            .read()
+            .await
+            .values()
+            .filter(|c| c.user_id.is_some())
+            .count()
+    }
+
+    /// Broadcast to all authenticated users
+    pub fn broadcast_to_authenticated(&self, msg: WsMessage) {
         let _ = self.sender.send(msg);
     }
 }
@@ -96,6 +160,8 @@ pub async fn ws_handler(
     auth_service: web::Data<AuthService>,
     broker: web::Data<MessageBroker>,
 ) -> Result<HttpResponse, actix_web::Error> {
+    let connection_id = Uuid::new_v4();
+    
     // Extract token from query parameter or header
     let token = req
         .query_string()
@@ -126,9 +192,18 @@ pub async fn ws_handler(
 
     // Clone broker before moving into spawn
     let broker_clone = MessageBroker::clone(&broker);
+    
+    // Register connection
+    broker.register_connection(connection_id, user_id.clone()).await;
 
     // Spawn WebSocket handler
-    actix_web::rt::spawn(handle_ws(session, msg_stream, user_id, broker_clone));
+    actix_web::rt::spawn(handle_ws(
+        session, 
+        msg_stream, 
+        connection_id,
+        user_id, 
+        broker_clone
+    ));
 
     Ok(response)
 }
@@ -137,6 +212,7 @@ pub async fn ws_handler(
 async fn handle_ws(
     mut session: Session,
     mut msg_stream: actix_ws::MessageStream,
+    connection_id: Uuid,
     user_id: Option<String>,
     broker: MessageBroker,
 ) {
@@ -228,9 +304,12 @@ async fn handle_ws(
         }
     }
 
+    // Cleanup connection tracking
+    broker.unregister_connection(connection_id).await;
+    
     // Close session
     let _ = session.close(None).await;
-    info!("WebSocket disconnected: user={:?}", user_id);
+    info!("WebSocket disconnected: connection_id={:?}, user={:?}", connection_id, user_id);
 }
 
 /// Handle a message from the client

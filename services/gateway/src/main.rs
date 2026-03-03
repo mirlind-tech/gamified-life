@@ -7,7 +7,7 @@ use actix_web::{App, HttpServer, middleware as actix_middleware, web};
 use dotenvy::dotenv;
 use std::env;
 use tracing::{Level, info};
-use tracing_subscriber::FmtSubscriber;
+use tracing_subscriber::EnvFilter;
 
 mod config;
 mod handlers;
@@ -21,21 +21,46 @@ use config::AppConfig;
 use handlers::websocket::MessageBroker;
 use middleware::RequestId;
 use services::{AiCoreService, AuthService};
+use services::cache::CacheService;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     // Load environment variables
     dotenv().ok();
 
-    // Initialize tracing
-    let _subscriber = FmtSubscriber::builder()
-        .with_max_level(Level::INFO)
-        .with_target(false)
-        .with_thread_ids(true)
-        .with_file(true)
-        .with_line_number(true)
-        .compact()
-        .init();
+    // Initialize structured JSON logging
+    let json_logging = env::var("JSON_LOGGING").unwrap_or_else(|_| "false".to_string()) == "true";
+    
+    if json_logging {
+        // Production: JSON format for observability
+        tracing_subscriber::fmt()
+            .json()
+            .with_env_filter(
+                EnvFilter::from_default_env()
+                    .add_directive(Level::INFO.into())
+            )
+            .with_target(true)
+            .with_thread_ids(true)
+            .with_file(true)
+            .with_line_number(true)
+            .with_current_span(true)
+            .with_span_list(true)
+            .init();
+        info!("JSON structured logging enabled");
+    } else {
+        // Development: Pretty format
+        tracing_subscriber::fmt()
+            .with_env_filter(
+                tracing_subscriber::EnvFilter::from_default_env()
+                    .add_directive(Level::DEBUG.into())
+            )
+            .with_target(false)
+            .with_thread_ids(true)
+            .with_file(true)
+            .with_line_number(true)
+            .compact()
+            .init();
+    }
 
     info!(
         "🚀 Starting Mirlind Life OS API Gateway v{}",
@@ -68,6 +93,20 @@ async fn main() -> std::io::Result<()> {
         }
     };
     let db_pool = web::Data::new(db_pool);
+
+    // Initialize Redis cache
+    info!("Initializing Redis cache...");
+    let cache_service = match CacheService::new(&app_config.redis_url).await {
+        Ok(cache) => {
+            info!("✅ Redis cache connected successfully");
+            cache
+        }
+        Err(e) => {
+            eprintln!("Failed to connect to Redis: {}", e);
+            std::process::exit(1);
+        }
+    };
+    let cache_service = web::Data::new(cache_service);
 
     // Initialize auth service
     info!("Initializing auth service...");
@@ -124,6 +163,7 @@ async fn main() -> std::io::Result<()> {
             .app_data(auth_service.clone())
             .app_data(db_pool.clone())
             .app_data(ai_core_service.clone())
+            .app_data(cache_service.clone())
             .app_data(ws_broker.clone())
             // Middleware (order matters - last added wraps first)
             .wrap(cors)

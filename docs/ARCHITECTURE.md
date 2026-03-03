@@ -2,7 +2,7 @@
 
 Technical overview of the Gamified Life application (current single-user execution phase).
 
-The active stack is `apps/web` (Next.js 15) plus `services/gateway` (Rust/Actix). The old Vite frontend has been removed from the live setup.
+The active stack is `apps/web` (Next.js 16) plus `services/gateway` (Rust/Actix). The old Vite frontend has been removed from the live setup.
 
 ---
 

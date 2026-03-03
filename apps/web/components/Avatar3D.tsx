@@ -111,14 +111,14 @@ function OrbitingParticles({ count = 8 }: { count?: number }) {
   const particles = useMemo(() => {
     return Array.from({ length: count }, (_, i) => {
       const angle = (i / count) * Math.PI * 2;
-      const radius = 1.8 + Math.random() * 0.3;
+      const radius = 1.8 + (i % 3) * 0.12;
       return {
         position: [
           Math.cos(angle) * radius,
           Math.sin(angle * 2) * 0.5,
           Math.sin(angle) * radius,
         ] as [number, number, number],
-        scale: 0.1 + Math.random() * 0.1,
+        scale: 0.1 + (i % 4) * 0.025,
       };
     });
   }, [count]);
@@ -232,7 +232,7 @@ export function Avatar3D({ level = 1, className = "" }: Avatar3DProps) {
       animate={{ opacity: 1, scale: 1 }}
       className={`relative ${className}`}
     >
-      <div className="w-full h-full rounded-full overflow-hidden bg-gradient-to-b from-gray-900 to-black">
+      <div className="w-full h-full rounded-full overflow-hidden bg-linear-to-b from-gray-900 to-black">
         <Canvas
           camera={{ position: [0, 0, 5], fov: 45 }}
           dpr={[1, 2]}
@@ -245,10 +245,10 @@ export function Avatar3D({ level = 1, className = "" }: Avatar3DProps) {
       </div>
       
       {/* Glow effect overlay */}
-      <div className="absolute inset-0 rounded-full bg-gradient-to-t from-purple-500/10 via-transparent to-cyan-500/10 pointer-events-none" />
+      <div className="absolute inset-0 rounded-full bg-linear-to-t from-purple-500/10 via-transparent to-cyan-500/10 pointer-events-none" />
       
       {/* Level badge */}
-      <div className="absolute -bottom-2 -right-2 w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-cyan-500 flex items-center justify-center font-bold text-white shadow-lg shadow-purple-500/30">
+      <div className="absolute -bottom-2 -right-2 w-12 h-12 rounded-full bg-linear-to-br from-purple-500 to-cyan-500 flex items-center justify-center font-bold text-white shadow-lg shadow-purple-500/30">
         {level}
       </div>
       
@@ -315,49 +315,3 @@ export function SkillTree3D() {
   );
 }
 
-/**
- * Cyberpunk Background with WebGL Shader
- * Animated grid floor with neon effects
- */
-export function CyberpunkBackground() {
-  return (
-    <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
-      {/* Base gradient */}
-      <div className="absolute inset-0 bg-gradient-to-b from-[#050712] via-[#0d1327] to-[#04050d]" />
-      
-      {/* Animated grid lines using CSS (WebGL shader placeholder) */}
-      <div 
-        className="absolute inset-0 opacity-10"
-        style={{
-          backgroundImage: `
-            linear-gradient(rgba(45, 226, 230, 0.5) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(45, 226, 230, 0.5) 1px, transparent 1px)
-          `,
-          backgroundSize: '60px 60px',
-          perspective: '500px',
-          transform: 'rotateX(60deg) translateY(-100px) scale(2)',
-          animation: 'grid-move 20s linear infinite',
-        }}
-      />
-      
-      {/* Floating orbs */}
-      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '4s' }} />
-      <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-cyan-500/10 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '6s' }} />
-      
-      {/* Scanlines */}
-      <div 
-        className="absolute inset-0 opacity-[0.03]"
-        style={{
-          backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.3) 2px, rgba(0,0,0,0.3) 4px)',
-        }}
-      />
-      
-      <style jsx>{`
-        @keyframes grid-move {
-          0% { transform: rotateX(60deg) translateY(-100px) scale(2); }
-          100% { transform: rotateX(60deg) translateY(-160px) scale(2); }
-        }
-      `}</style>
-    </div>
-  );
-}

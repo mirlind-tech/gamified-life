@@ -1,203 +1,166 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useActionState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/contexts/AuthContext";
+import { Hexagon, Loader2 } from "lucide-react";
+import { loginAction, registerAction, type AuthState } from "./actions/auth";
 
 export default function LoginPage() {
   const router = useRouter();
-  const { login, register, isLoading } = useAuth();
   const [isRegistering, setIsRegistering] = useState(false);
-  const [error, setError] = useState("");
   
-  const [formData, setFormData] = useState({
-    email: "",
-    username: "",
-    password: "",
-    confirmPassword: "",
-  });
+  const [state, formAction, pending] = useActionState<AuthState, FormData>(
+    isRegistering ? registerAction : loginAction,
+    { success: false }
+  );
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-
-    if (isRegistering) {
-      if (formData.password !== formData.confirmPassword) {
-        setError("Passwords do not match");
-        return;
-      }
-      if (!formData.username) {
-        setError("Username is required");
-        return;
-      }
-    }
-
-    try {
-      if (isRegistering) {
-        await register(formData.email, formData.username, formData.password);
-      } else {
-        await login(formData.email, formData.password);
-      }
+  useEffect(() => {
+    if (state.success) {
       router.push("/dashboard");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Authentication failed");
     }
-  };
+  }, [state.success, router]);
 
   return (
-    <main className="min-h-screen flex items-center justify-center p-4 relative">
-      {/* Background effects */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '4s' }} />
-        <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-cyan-500/10 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '6s' }} />
-      </div>
+    <div className="min-h-screen flex items-center justify-center p-4 bg-[#0a0a0f]">
+      {/* Subtle background gradient */}
+      <div 
+        className="fixed inset-0 -z-10"
+        style={{
+          background: `
+            radial-gradient(ellipse 80% 50% at 50% -20%, rgba(0, 212, 255, 0.08), transparent),
+            radial-gradient(ellipse 60% 40% at 80% 100%, rgba(168, 85, 247, 0.05), transparent)
+          `
+        }}
+      />
 
-      <div className="glass-card w-full max-w-md p-8 relative z-10 animate-slide-up">
-        {/* Title */}
-        <div className="mb-8 text-center">
-          <h1 className="text-4xl font-bold gradient-text mb-2 tracking-tight">
-            MIRLIND PROTOCOL
-          </h1>
-          <p className="text-secondary text-sm tracking-[0.2em] uppercase">
-            Gamified Life OS
-          </p>
-        </div>
-
-        {/* Status */}
-        <div className="flex items-center justify-center gap-2 mb-6 text-center">
-          <span className="status-dot status-online animate-pulse" />
-          <span className="text-xs text-muted uppercase tracking-wider font-mono">
-            Gateway Connected
-          </span>
-        </div>
-
-        {/* Error */}
-        {error && (
-          <div className="mb-6 p-4 bg-red-500/10 border border-red-500/30 rounded-xl text-center">
-            <p className="text-red-400 text-sm">{error}</p>
+      <div className="w-full max-w-md">
+        {/* Logo */}
+        <div className="flex flex-col items-center mb-8">
+          <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-cyan-500 to-purple-500 flex items-center justify-center mb-4 shadow-lg shadow-cyan-500/20">
+            <Hexagon className="w-8 h-8 text-white" strokeWidth={2.5} />
           </div>
-        )}
+          <h1 className="text-2xl font-bold text-white">Mirlind Protocol</h1>
+          <p className="text-sm text-[#6b6b80] mt-1">Gamified Life OS</p>
+        </div>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-5">
-          {/* Email */}
-          <div className="text-center">
-            <label htmlFor="email" className="block text-xs uppercase tracking-wider text-secondary mb-2 font-medium w-full">
-              Email
-            </label>
-            <div className="flex justify-center">
+        {/* Card */}
+        <div className="bg-[#12121a] border border-[#ffffff0f] rounded-xl p-6">
+          {/* Status */}
+          <div className="flex items-center justify-center gap-2 mb-6">
+            <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+            <span className="text-xs text-[#6b6b80] uppercase tracking-wider font-mono">
+              Gateway Online
+            </span>
+          </div>
+
+          {/* Error/Success */}
+          {state.error && (
+            <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
+              <p className="text-sm text-red-400">{state.error}</p>
+            </div>
+          )}
+
+          {/* Form */}
+          <form action={formAction} className="space-y-4">
+            <div>
+              <label htmlFor="email" className="block text-xs font-medium text-[#a1a1b5] uppercase tracking-wider mb-1.5">
+                Email
+              </label>
               <input
                 id="email"
                 name="email"
                 type="email"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                className="input-field text-center w-[70%]"
-                placeholder="user@example.com"
                 required
                 autoComplete="email"
+                placeholder="you@example.com"
+                className="w-full px-4 py-2.5 bg-[#1a1a25] border border-[#ffffff0f] rounded-lg text-white text-sm placeholder:text-[#4a4a5c] focus:outline-none focus:border-cyan-500/50 transition-colors"
               />
             </div>
-          </div>
 
-          {/* Username */}
-          {isRegistering && (
-            <div className="text-center">
-              <label htmlFor="username" className="block text-xs uppercase tracking-wider text-secondary mb-2 font-medium w-full">
-                Username
-              </label>
-              <div className="flex justify-center">
+            {isRegistering && (
+              <div>
+                <label htmlFor="username" className="block text-xs font-medium text-[#a1a1b5] uppercase tracking-wider mb-1.5">
+                  Username
+                </label>
                 <input
                   id="username"
                   name="username"
                   type="text"
-                  value={formData.username}
-                  onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                  className="input-field text-center w-[70%]"
-                  placeholder="Username"
                   required
                   autoComplete="username"
+                  placeholder="username"
+                  className="w-full px-4 py-2.5 bg-[#1a1a25] border border-[#ffffff0f] rounded-lg text-white text-sm placeholder:text-[#4a4a5c] focus:outline-none focus:border-cyan-500/50 transition-colors"
                 />
               </div>
-            </div>
-          )}
+            )}
 
-          {/* Password */}
-          <div className="text-center">
-            <label htmlFor="password" className="block text-xs uppercase tracking-wider text-secondary mb-2 font-medium w-full">
-              Password
-            </label>
-            <div className="flex justify-center">
+            <div>
+              <label htmlFor="password" className="block text-xs font-medium text-[#a1a1b5] uppercase tracking-wider mb-1.5">
+                Password
+              </label>
               <input
                 id="password"
                 name="password"
                 type="password"
-                value={formData.password}
-                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                className="input-field text-center w-[70%]"
-                placeholder="••••••••"
                 required
                 autoComplete={isRegistering ? "new-password" : "current-password"}
+                placeholder="••••••••"
+                className="w-full px-4 py-2.5 bg-[#1a1a25] border border-[#ffffff0f] rounded-lg text-white text-sm placeholder:text-[#4a4a5c] focus:outline-none focus:border-cyan-500/50 transition-colors"
               />
             </div>
-          </div>
 
-          {/* Confirm Password */}
-          {isRegistering && (
-            <div className="text-center">
-              <label htmlFor="confirmPassword" className="block text-xs uppercase tracking-wider text-secondary mb-2 font-medium w-full">
-                Confirm Password
-              </label>
-              <div className="flex justify-center">
+            {isRegistering && (
+              <div>
+                <label htmlFor="confirmPassword" className="block text-xs font-medium text-[#a1a1b5] uppercase tracking-wider mb-1.5">
+                  Confirm Password
+                </label>
                 <input
                   id="confirmPassword"
                   name="confirmPassword"
                   type="password"
-                  value={formData.confirmPassword}
-                  onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                  className="input-field text-center w-[70%]"
-                  placeholder="••••••••"
                   required
-                  autoComplete="new-password"
+                  placeholder="••••••••"
+                  className="w-full px-4 py-2.5 bg-[#1a1a25] border border-[#ffffff0f] rounded-lg text-white text-sm placeholder:text-[#4a4a5c] focus:outline-none focus:border-cyan-500/50 transition-colors"
                 />
               </div>
-            </div>
-          )}
+            )}
 
-          <div className="text-center">
             <button
               type="submit"
-              disabled={isLoading}
-              className="btn-primary mt-6 disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={pending}
+              className="w-full py-2.5 bg-gradient-to-r from-cyan-500 to-cyan-600 hover:from-cyan-400 hover:to-cyan-500 text-[#0a0a0f] font-semibold rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
-            {isLoading ? "Processing..." : isRegistering ? "Create Account" : "Enter System"}
+              {pending ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Processing...
+                </>
+              ) : (
+                isRegistering ? "Create Account" : "Sign In"
+              )}
+            </button>
+          </form>
+
+          {/* Toggle */}
+          <div className="mt-4 text-center">
+            <button
+              type="button"
+              onClick={() => setIsRegistering(!isRegistering)}
+              disabled={pending}
+              className="text-sm text-[#6b6b80] hover:text-cyan-400 transition-colors"
+            >
+              {isRegistering
+                ? "Already have an account? Sign in"
+                : "Need an account? Create one"}
             </button>
           </div>
-        </form>
-
-        {/* Toggle */}
-        <div className="mt-6 text-center">
-          <button
-            type="button"
-            onClick={() => {
-              setIsRegistering(!isRegistering);
-              setError("");
-            }}
-            className="text-sm text-cyan hover:text-magenta hover:underline hover:drop-shadow-[0_0_8px_rgba(255,42,109,0.5)] transition-all"
-          >
-            {isRegistering
-              ? "Already have an account? Sign in"
-              : "Need an account? Create one"}
-          </button>
         </div>
 
         {/* Footer */}
-        <div className="mt-8 pt-6 border-t border-white/10 text-center">
-          <p className="text-xs text-muted font-mono">
-            Rust Gateway v2.0.0 • Actix-Web
-          </p>
-        </div>
+        <p className="text-center text-xs text-[#4a4a5c] mt-6 font-mono">
+          Rust Gateway v2.0 • Actix-Web • React 19
+        </p>
       </div>
-    </main>
+    </div>
   );
 }

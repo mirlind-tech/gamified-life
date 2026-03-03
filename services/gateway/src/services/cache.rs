@@ -80,22 +80,22 @@ impl CacheService {
     /// Get multiple values
     pub async fn mget<T: DeserializeOwned>(
         &self,
-        keys: &[&str],
+        keys: &[String],
     ) -> Result<Vec<Option<T>>, CacheError> {
         let mut conn = self.connection.clone();
-        let values: Vec<Option<String>> = conn.get(keys).await?;
-
-        let mut result = Vec::new();
-        for value in values {
+        
+        let mut results = Vec::new();
+        for key in keys {
+            let value: Option<String> = conn.get(key).await?;
             match value {
                 Some(v) => {
                     let parsed = serde_json::from_str(&v)?;
-                    result.push(Some(parsed));
+                    results.push(Some(parsed));
                 }
-                None => result.push(None),
+                None => results.push(None),
             }
         }
-        Ok(result)
+        Ok(results)
     }
 }
 
