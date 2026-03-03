@@ -9,10 +9,13 @@ const MOCK_USER: User = {
   id: "demo-user",
   email: "demo@mirlind.io",
   username: "DemoUser",
+  level: 12,
+  xp: 2840,
   created_at: new Date().toISOString(),
 };
 
-const isMockMode = process.env.NEXT_PUBLIC_MOCK_API === "true";
+// Always use mock mode for Vercel preview (no backend needed)
+const isMockMode = true;
 
 interface AuthContextType {
   user: User | null;

@@ -28,7 +28,8 @@ import {
 } from "@/types";
 
 const GATEWAY_URL = process.env.NEXT_PUBLIC_GATEWAY_URL || "http://127.0.0.1:3000";
-const isMockMode = process.env.NEXT_PUBLIC_MOCK_API === "true";
+// Always use mock mode for Vercel preview (no backend needed)
+const isMockMode = true;
 
 // Mock data for preview mode
 const MOCK_STATS: PlayerStats = {
