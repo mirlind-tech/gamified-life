@@ -5,17 +5,9 @@ import { User } from "@/types/auth";
 import { api } from "@/lib/api";
 import { getToken, logoutAction } from "@/app/actions/auth";
 
-const MOCK_USER: User = {
-  id: "demo-user",
-  email: "demo@mirlind.io",
-  username: "DemoUser",
-  level: 12,
-  xp: 2840,
-  created_at: new Date().toISOString(),
-};
 
-// Always use mock mode for Vercel preview (no backend needed)
-const isMockMode = true;
+
+const isMockMode = process.env.NEXT_PUBLIC_MOCK_API === "true";
 
 interface AuthContextType {
   user: User | null;
@@ -34,12 +26,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   const refreshUser = useCallback(async () => {
-    // Mock mode: always logged in
-    if (isMockMode) {
-      setUser(MOCK_USER);
-      return;
-    }
-
     try {
       const token = await getToken();
       const localToken = typeof window !== 'undefined' 
@@ -67,11 +53,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [refreshUser]);
 
   const login = async (email: string, password: string) => {
-    if (isMockMode) {
-      setUser(MOCK_USER);
-      return;
-    }
-
     setIsLoading(true);
     try {
       const response = await api.login({ email, password });
@@ -82,11 +63,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const register = async (email: string, username: string, _password: string) => {
-    if (isMockMode) {
-      setUser({ ...MOCK_USER, email, username });
-      return;
-    }
-
     setIsLoading(true);
     try {
       const response = await api.register({ email, username, password: _password });
@@ -97,11 +73,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const logout = async () => {
-    if (isMockMode) {
-      setUser(null);
-      return;
-    }
-
     setIsLoading(true);
     try {
       await logoutAction();

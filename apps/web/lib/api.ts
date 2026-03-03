@@ -28,35 +28,8 @@ import {
 } from "@/types";
 
 const GATEWAY_URL = process.env.NEXT_PUBLIC_GATEWAY_URL || "http://127.0.0.1:3000";
-// Always use mock mode for Vercel preview (no backend needed)
-const isMockMode = true;
+const isMockMode = process.env.NEXT_PUBLIC_MOCK_API === "true";
 
-// Mock data for preview mode
-const MOCK_STATS: PlayerStats = {
-  level: 12,
-  xp: 2840,
-  xp_to_next: 3000,
-  total_xp_earned: 15240,
-  streak_days: 14,
-};
-
-const MOCK_STREAK: ProtocolStreak = {
-  current_streak: 14,
-  longest_streak: 21,
-  last_completed_date: new Date().toISOString().split('T')[0],
-};
-
-const MOCK_PROTOCOL = {
-  id: null,
-  date: new Date().toISOString().split('T')[0],
-  score: 85,
-  notes: "",
-  wake05: true,
-  german_study: false,
-  gym_workout: true,
-  sleep22: false,
-  coding_hours: 3,
-};
 const DEFAULT_FINANCE_PROFILE: FinanceProfile = {
   monthly_income: 2000,
   monthly_fixed_costs: 1447,
@@ -581,7 +554,6 @@ class ApiClient {
   // ============================================================================
 
   async getPlayerStats(): Promise<PlayerStats> {
-    if (isMockMode) return MOCK_STATS;
     const response = await this.request<{ stats: RawPlayerStats }>("/player/stats");
     return normalizePlayerStats(response.stats);
   }
@@ -613,7 +585,6 @@ class ApiClient {
   // ============================================================================
 
   async getProtocolStreak(): Promise<ProtocolStreak> {
-    if (isMockMode) return MOCK_STREAK;
     const response = await this.request<{
       current?: number;
       longest?: number;
@@ -628,7 +599,6 @@ class ApiClient {
   }
 
   async getProtocol(date: string): Promise<ProtocolEntry> {
-    if (isMockMode) return normalizeProtocol(MOCK_PROTOCOL, date);
     const response = await this.request<{ protocol: RawProtocol }>(`/protocol/${date}`);
     return normalizeProtocol(response.protocol, date);
   }
