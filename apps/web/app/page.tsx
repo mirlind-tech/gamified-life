@@ -3,22 +3,68 @@
 import { useState, useActionState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Hexagon, Loader2 } from "lucide-react";
-import { loginAction, registerAction, type AuthState } from "./actions/auth";
+import { loginAction, type AuthState } from "./actions/auth";
+
+// Auto-login for preview mode - no manual login needed
+const AUTO_LOGIN = true;
 
 export default function LoginPage() {
   const router = useRouter();
   const [isRegistering, setIsRegistering] = useState(false);
+  const [autoLoggingIn, setAutoLoggingIn] = useState(AUTO_LOGIN);
   
   const [state, formAction, pending] = useActionState<AuthState, FormData>(
-    isRegistering ? registerAction : loginAction,
+    loginAction,
     { success: false }
   );
+
+  // Auto-login on mount for preview
+  useEffect(() => {
+    if (AUTO_LOGIN) {
+      const autoLogin = async () => {
+        const formData = new FormData();
+        formData.append('email', 'demo@mirlind.io');
+        formData.append('password', 'demo');
+        
+        // Programmatically submit the form
+        const form = document.createElement('form');
+        form.action = formAction as unknown as string;
+        form.method = 'POST';
+        
+        // Use the form action directly
+        try {
+          const result = await loginAction({ success: false }, formData);
+          if (result.success) {
+            router.push('/dashboard');
+          }
+        } catch {
+          setAutoLoggingIn(false);
+        }
+      };
+      
+      autoLogin();
+    }
+  }, [router]);
 
   useEffect(() => {
     if (state.success) {
       router.push("/dashboard");
     }
   }, [state.success, router]);
+
+  // Show loading screen while auto-logging in
+  if (autoLoggingIn) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#0a0a0f]">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-cyan-500 to-purple-500 flex items-center justify-center animate-pulse">
+            <Hexagon className="w-8 h-8 text-white" strokeWidth={2.5} />
+          </div>
+          <p className="text-[#6b6b80]">Loading preview...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-[#0a0a0f]">
@@ -49,7 +95,7 @@ export default function LoginPage() {
           <div className="flex items-center justify-center gap-2 mb-6">
             <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
             <span className="text-xs text-[#6b6b80] uppercase tracking-wider font-mono">
-              Gateway Online
+              Preview Mode
             </span>
           </div>
 
@@ -70,6 +116,7 @@ export default function LoginPage() {
                 id="email"
                 name="email"
                 type="email"
+                defaultValue="demo@mirlind.io"
                 required
                 autoComplete="email"
                 placeholder="you@example.com"
@@ -102,6 +149,7 @@ export default function LoginPage() {
                 id="password"
                 name="password"
                 type="password"
+                defaultValue="demo"
                 required
                 autoComplete={isRegistering ? "new-password" : "current-password"}
                 placeholder="••••••••"
